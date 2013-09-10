@@ -46,7 +46,7 @@ nop_vektor:                     @        Handler for unused Interrupts
   Wortbirne Flag_visible|Flag_variable, "irq-\Name" @ ( -- addr )
   CoreVariable irq_hook_\Name
 @------------------------------------------------------------------------------  
-  pushdatos
+  stmdb psp!, {tos}
   ldr tos, =irq_hook_\Name
   bx lr
   .word nop_vektor  @ Startwert für unbelegte Interrupts   Start value for unused interrupts
@@ -64,12 +64,22 @@ irq_vektor_\Name:
 @ All interrupt handlers work the same way and are generated with a macro:
 @------------------------------------------------------------------------------
 interrupt systick
-interrupt adc
-interrupt cmp
-interrupt dac
 interrupt porta
+interrupt portb
+interrupt portc
 interrupt portd
-
+interrupt porte
+interrupt portf
+interrupt adc0seq0
+interrupt adc0seq1
+interrupt adc0seq2
+interrupt adc0seq3
+interrupt timer0a
+interrupt timer0b
+interrupt timer1a
+interrupt timer1b
+interrupt timer2a
+interrupt timer2b
 @------------------------------------------------------------------------------
 
 /*
