@@ -1,19 +1,13 @@
 
-\ Ledcomm-Stellaris
-\   Connect LED with Anode (over optional 100 Ohms resistor) to PB0 and with Cathode directly to PB1.
+\ Ledcomm for LPC1114FN28
+\   Connect LED with Anode (over optional 100 Ohms resistor) to P1.8 and with Cathode directly to P1.9.
 
 compiletoflash
 
-$400053FC constant PORTB_DATA ( Ein- und Ausgaberegister )  
-$40005400 constant PORTB_DIR  ( Soll der Pin Eingang oder Ausgang sein ? )
-$40005500 constant PORTB_DR2R ( 2 mA Treiber )
-$40005504 constant PORTB_DR4R ( 4 mA )
-$40005508 constant PORTB_DR8R ( 8 mA )
-$4000550C constant PORTB_ODR  ( Open Drain )
-$40005510 constant PORTB_PUR  ( Pullup Resistor )
-$40005514 constant PORTB_PDR  ( Pulldown Resistor )
-$40005518 constant PORTB_SLR  ( Slew Rate )
-$4000551C constant PORTB_DEN  ( Digital Enable )
+$40044014 constant IOCON_PIO1_8
+$40044038 constant IOCON_PIO1_9
+$50013FFC constant GPIO1_DATA
+$50018000 constant GPIO1_DIR
 
 decimal
 
@@ -22,28 +16,28 @@ decimal
 : Verbindungsanfang ( -- ) ."  (Up) "      ; \ Verbindungsanzeige nach Bedarf anpassen
 : Verbindungsende   ( -- ) ."  (Down) " cr ;
 
-1 constant Anode
-2 constant Kathode
+1 8 lshift constant Anode
+1 9 lshift constant Kathode
 
 : Strahle ( -- )
-  Anode Kathode or portb_dir  bis!
-  Anode            portb_data bis!
-  Kathode          portb_data bic!
+  Anode Kathode or GPIO1_DIR  bis!
+  Anode            GPIO1_DATA bis!
+  Kathode          GPIO1_DATA bic!
 ;
 
 : Lauschen-Vorbereitung ( -- )
-  Anode Kathode or portb_dir  bis!   
-  Anode            portb_data bic! \ Sperrschichtkapazität
-  Kathode          portb_data bis! \ durch Verpolung laden
+  Anode Kathode or GPIO1_DIR  bis!   
+  Anode            GPIO1_DATA bic! \ Sperrschichtkapazität
+  Kathode          GPIO1_DATA bis! \ durch Verpolung laden
 
   \ Warten, bis die Kathode geladen ist - das geht im ARM nicht durch Einlesen des Pins
   10 0 do loop
 
-  Kathode portb_dir bic!
+  Kathode GPIO1_DIR bic!
 ;
 
 : Lauschen-Nachbearbeitung ( -- Flag )
-  Kathode portb_data bit@ not \ Ist die Kathode entladen, ist es hell
+  Kathode GPIO1_DATA bit@ not \ Ist die Kathode entladen, ist es hell
 ;
 
 
@@ -165,15 +159,16 @@ true variable Zustand ( Hell oder Dunkel ? )
 
 : ledcomm ( -- )
 
-  anode kathode or  portb_den  ! \ Ausgänge für die Ledcomm-LED
-  anode kathode or  portb_dr8r !
-  anode kathode or  portb_dir  !
-  0                 portb_data !
+  $C0 IOCON_PIO1_8 ! \ Set P1.8 as GPIO without Pullup/Pulldown. $C0 are reserved bits that must be set.
+  $C0 IOCON_PIO1_9 ! \     P1.9 also.
+
+     0 GPIO1_DATA  ! \ Low
+  $300 GPIO1_DIR   ! \ Set P1.8 and P1.9 as Output
 
   Taktlauscher-init
 
   ['] Taktlauscher irq-systick !  \ (8 / 32768) s = 244 us
-  Basiszeit @ 16 * $E000E014 !    \ 244 us * 16 MHz = 3904 Takte
+  Basiszeit @ 12 * $E000E014 !    \ 244 us * 12 MHz = 2928 Takte
   7 $E000E010 !                   \ Enable the systick interrupt.
 
   eint begin again
