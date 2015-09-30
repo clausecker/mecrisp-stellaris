@@ -30,7 +30,6 @@ rlooplimit .req r5
   ldr tos, [sp, #8]
   bx lr
 @------------------------------------------------------------------------------
-  push {lr}
   pushdaconstw 0x9802
   b.n loop_j_allocator
 
@@ -42,10 +41,11 @@ rlooplimit .req r5
   ldr tos, [sp]
   bx lr
 @------------------------------------------------------------------------------
-  push {lr}
-  pushdaconstw 0x9800
 
+rfetch_allocator:
+  pushdaconstw 0x9800
 loop_j_allocator:
+  push {lr}
   bl befreie_tos
   bl get_free_register
   str r3, [r0, #offset_state_tos]

@@ -81,22 +81,97 @@ move:  @ ( Quelladdr Zieladdr Byteanzahl -- ) ( Source Destination Count -- )
   bx lr
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_inline|Flag_allocator_Speicherholen, "@" @ ( 32-addr -- x )
+  Wortbirne Flag_inline|Flag_allocator, "@" @ ( 32-addr -- x )
                               @ Loads the cell at 'addr'.
 @ -----------------------------------------------------------------------------
   ldr tos, [tos]
   bx lr
-  ldr r0, [r0, #0]
+
+allocator_4fetch:
+    push {lr}
+    bl expect_one_element
+    pushdaconstw 0x6800 @ ldr r0, [r0, #0] Opcode
+
+    @ Sollte TOS gerade eine Konstante sein, generiere sie so gut es geht.
+    ldr r3, [r0, #offset_state_tos]
+    cmp r3, #constant
+    bne 2f
+      ldr r3, [r0, #offset_constant_tos]
+
+      @ Die fünf Bits, die in den LDR-Opcode passen, werden nun direkt dort eingepflegt.
+      movs r1, 0x7C @ %1111100
+      ands r1, r3   @ Bits herausholen
+      lsls r1, #4
+      orrs tos, r1
+
+      movs r1, 0x7C @ %1111100
+      bics r3, r1
+
+      bl generiere_adresskonstante
+
+2:  @ r3 sagt nun in jedem Fall, in welchem Register die Adresse zum Laden bereitliegt.
+    lsls r3, #3
+    orrs tos, r3
+
+    @ Elementkopien umschiffen - das Ladeergebnis benötigt auf jeden Fall einen frischen Register:
+    bl eliminiere_tos
+    bl befreie_tos
+    bl get_free_register
+    str r3, [r0, #offset_state_tos]
+
+    orrs tos, r3  @ Der Endzielregister ist gar nicht geschoben
+    bl hkomma
+    pop {pc}
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_inline|Flag_allocator_Speicherschreiben, "!" @ ( x 32-addr -- )
+  Wortbirne Flag_inline|Flag_allocator, "!" @ ( x 32-addr -- )
 @ Given a value 'x' and a cell-aligned address 'addr', stores 'x' to memory at 'addr', consuming both.
 @ -----------------------------------------------------------------------------
   ldm psp!, {r0, r1} @ X is the new TOS after the store completes.
   str r0, [tos]      @ Popping both saves a cycle.
   movs tos, r1
   bx lr
-  str r0, [r0, #0]
+
+allocator_4store:
+    push {lr}
+    bl expect_two_elements
+    pushdaconstw 0x6000 @ str r0, [r0, #0] Opcode
+
+    @ Sollte TOS gerade eine Konstante sein, generiere sie so gut es geht.
+    ldr r3, [r0, #offset_state_tos]
+    cmp r3, #constant
+    bne 2f
+      ldr r3, [r0, #offset_constant_tos]
+
+      @ Die fünf Bits, die in den STR-Opcode passen, werden nun direkt dort eingepflegt.
+      movs r1, 0x7C @ %1111100
+      ands r1, r3   @ Bits herausholen
+      lsls r1, #4
+      orrs tos, r1
+
+      movs r1, 0x7C @ %1111100
+      bics r3, r1
+
+      bl generiere_adresskonstante
+
+2:  @ r3 sagt nun in jedem Fall, in welchem Register die Adresse zum Schreiben bereitliegt.
+    lsls r3, #3
+    orrs tos, r3
+
+
+    @ Sollte NOS gerade eine Konstante sein, generiere sie so gut es geht.
+    ldr r3, [r0, #offset_state_nos]
+    cmp r3, #constant
+    bne 3f
+      ldr r3, [r0, #offset_constant_nos]
+      bl generiere_konstante
+3:  @ r3 sagt nun in jedem Fall, in welchem Register der Inhalt zum Schreiben bereitliegt.
+    orrs tos, r3
+    bl hkomma
+
+    bl eliminiere_tos
+    bl eliminiere_tos
+    pop {pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "+!" @ ( x 32-addr -- )
@@ -109,18 +184,14 @@ move:  @ ( Quelladdr Zieladdr Byteanzahl -- ) ( Source Destination Count -- )
   movs tos, r1
   bx lr
 
-    pushdaconstw 0x6000 @ str r0, [r0, #0] Opcode
-    pushdaconstw 0x6800 @ ldr r0, [r0, #0] Opcode
-
-plusstoreoptim:
     push {lr}
       bl expect_two_elements
       bl dup_allocator
-      bl alloc_speicherholen
+      bl allocator_4fetch
       bl rot_allocator
       bl plus_allocator
       bl swap_allocator
-      bl alloc_speicherschreiben
+      bl allocator_4store
     pop {pc}
 
   @  Idea behind this snipplet code: Try to compile this through the allocator.
@@ -135,22 +206,97 @@ plusstoreoptim:
   @  ;
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_inline|Flag_allocator_Speicherholen, "h@" @ ( 16-addr -- x )
+  Wortbirne Flag_inline|Flag_allocator, "h@" @ ( 16-addr -- x )
                               @ Loads the half-word at 'addr'.
 @ -----------------------------------------------------------------------------
   ldrh tos, [tos]
   bx lr
-  ldrh r0, [r0, #0]
+
+allocator_2fetch:
+    push {lr}
+    bl expect_one_element
+    pushdaconstw 0x8800 @ ldrh r0, [r0, #0] Opcode
+
+    @ Sollte TOS gerade eine Konstante sein, generiere sie so gut es geht.
+    ldr r3, [r0, #offset_state_tos]
+    cmp r3, #constant
+    bne 2f
+      ldr r3, [r0, #offset_constant_tos]
+
+      @ Die fünf Bits, die in den LDRH-Opcode passen, werden nun direkt dort eingepflegt.
+      movs r1, 0x3E @ %1111100
+      ands r1, r3   @ Bits herausholen
+      lsls r1, #5
+      orrs tos, r1
+
+      movs r1, 0x3E @ %1111100
+      bics r3, r1
+
+      bl generiere_adresskonstante
+
+2:  @ r3 sagt nun in jedem Fall, in welchem Register die Adresse zum Laden bereitliegt.
+    lsls r3, #3
+    orrs tos, r3
+
+    @ Elementkopien umschiffen - das Ladeergebnis benötigt auf jeden Fall einen frischen Register:
+    bl eliminiere_tos
+    bl befreie_tos
+    bl get_free_register
+    str r3, [r0, #offset_state_tos]
+
+    orrs tos, r3  @ Der Endzielregister ist gar nicht geschoben
+    bl hkomma
+    pop {pc}
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_inline|Flag_allocator_Speicherschreiben, "h!" @ ( x 16-addr -- )
+  Wortbirne Flag_inline|Flag_allocator, "h!" @ ( x 16-addr -- )
 @ Given a value 'x' and an 16-bit-aligned address 'addr', stores 'x' to memory at 'addr', consuming both.
 @ -----------------------------------------------------------------------------
   ldm psp!, {r0, r1} @ X is the new TOS after the store completes.
   strh r0, [tos]     @ Popping both saves a cycle.
   movs tos, r1
   bx lr
-  strh r0, [r0, #0]
+
+allocator_2store:
+    push {lr}
+    bl expect_two_elements
+    pushdaconstw 0x8000 @ strh r0, [r0, #0] Opcode
+
+    @ Sollte TOS gerade eine Konstante sein, generiere sie so gut es geht.
+    ldr r3, [r0, #offset_state_tos]
+    cmp r3, #constant
+    bne 2f
+      ldr r3, [r0, #offset_constant_tos]
+
+      @ Die fünf Bits, die in den STRH-Opcode passen, werden nun direkt dort eingepflegt.
+      movs r1, 0x3E @ %1111100
+      ands r1, r3   @ Bits herausholen
+      lsls r1, #5
+      orrs tos, r1
+
+      movs r1, 0x3E @ %1111100
+      bics r3, r1
+
+      bl generiere_adresskonstante
+
+2:  @ r3 sagt nun in jedem Fall, in welchem Register die Adresse zum Schreiben bereitliegt.
+    lsls r3, #3
+    orrs tos, r3
+
+
+    @ Sollte NOS gerade eine Konstante sein, generiere sie so gut es geht.
+    ldr r3, [r0, #offset_state_nos]
+    cmp r3, #constant
+    bne 3f
+      ldr r3, [r0, #offset_constant_nos]
+      bl generiere_konstante
+3:  @ r3 sagt nun in jedem Fall, in welchem Register der Inhalt zum Schreiben bereitliegt.
+    orrs tos, r3
+    bl hkomma
+
+    bl eliminiere_tos
+    bl eliminiere_tos
+    pop {pc}
 
 
 @ -----------------------------------------------------------------------------
@@ -164,27 +310,109 @@ plusstoreoptim:
   movs tos, r1
   bx lr
 
-    pushdaconstw 0x8000 @ strh r0, [r0, #0] Opcode
-    pushdaconstw 0x8800 @ ldrh r0, [r0, #0] Opcode
-    b.n plusstoreoptim
+    push {lr}
+      bl expect_two_elements
+      bl dup_allocator
+      bl allocator_2fetch
+      bl rot_allocator
+      bl plus_allocator
+      bl swap_allocator
+      bl allocator_2store
+    pop {pc}
+
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_inline|Flag_allocator_Speicherholen, "c@" @ ( 8-addr -- x )
+  Wortbirne Flag_inline|Flag_allocator, "c@" @ ( 8-addr -- x )
                               @ Loads the byte at 'addr'.
 @ -----------------------------------------------------------------------------
   ldrb tos, [tos]
   bx lr
-  ldrb r0, [r0, #0]
+
+allocator_1fetch:
+    push {lr}
+    bl expect_one_element
+    pushdaconstw 0x7800 @ ldrb r0, [r0, #0] Opcode
+
+    @ Sollte TOS gerade eine Konstante sein, generiere sie so gut es geht.
+    ldr r3, [r0, #offset_state_tos]
+    cmp r3, #constant
+    bne 2f
+      ldr r3, [r0, #offset_constant_tos]
+
+      @ Die fünf Bits, die in den LDRB-Opcode passen, werden nun direkt dort eingepflegt.
+      movs r1, 0x1F @ %111110
+      ands r1, r3   @ Bits herausholen
+      lsls r1, #6
+      orrs tos, r1
+
+      movs r1, 0x1F @ %111110
+      bics r3, r1
+
+      bl generiere_adresskonstante
+
+2:  @ r3 sagt nun in jedem Fall, in welchem Register die Adresse zum Laden bereitliegt.
+    lsls r3, #3
+    orrs tos, r3
+
+    @ Elementkopien umschiffen - das Ladeergebnis benötigt auf jeden Fall einen frischen Register:
+    bl eliminiere_tos
+    bl befreie_tos
+    bl get_free_register
+    str r3, [r0, #offset_state_tos]
+
+    orrs tos, r3  @ Der Endzielregister ist gar nicht geschoben
+    bl hkomma
+    pop {pc}
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_inline|Flag_allocator_Speicherschreiben, "c!" @ ( x 8-addr -- )
+  Wortbirne Flag_inline|Flag_allocator, "c!" @ ( x 8-addr -- )
 @ Given a value 'x' and an 8-bit-aligned address 'addr', stores 'x' to memory at 'addr', consuming both.
 @ -----------------------------------------------------------------------------
   ldm psp!, {r0, r1} @ X is the new TOS after the store completes.
   strb r0, [tos]     @ Popping both saves a cycle.
   movs tos, r1
   bx lr
-  strb r0, [r0, #0]
+
+allocator_1store:
+    push {lr}
+    bl expect_two_elements
+    pushdaconstw 0x7000 @ strb r0, [r0, #0] Opcode
+
+    @ Sollte TOS gerade eine Konstante sein, generiere sie so gut es geht.
+    ldr r3, [r0, #offset_state_tos]
+    cmp r3, #constant
+    bne 2f
+      ldr r3, [r0, #offset_constant_tos]
+
+      @ Die fünf Bits, die in den STRB-Opcode passen, werden nun direkt dort eingepflegt.
+      movs r1, 0x1F @ %111110
+      ands r1, r3   @ Bits herausholen
+      lsls r1, #6
+      orrs tos, r1
+
+      movs r1, 0x1F @ %111110
+      bics r3, r1
+
+      bl generiere_adresskonstante
+
+2:  @ r3 sagt nun in jedem Fall, in welchem Register die Adresse zum Schreiben bereitliegt.
+    lsls r3, #3
+    orrs tos, r3
+
+
+    @ Sollte NOS gerade eine Konstante sein, generiere sie so gut es geht.
+    ldr r3, [r0, #offset_state_nos]
+    cmp r3, #constant
+    bne 3f
+      ldr r3, [r0, #offset_constant_nos]
+      bl generiere_konstante
+3:  @ r3 sagt nun in jedem Fall, in welchem Register der Inhalt zum Schreiben bereitliegt.
+    orrs tos, r3
+    bl hkomma
+
+    bl eliminiere_tos
+    bl eliminiere_tos
+    pop {pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "c+!" @ ( x 8-addr -- )
@@ -197,12 +425,17 @@ plusstoreoptim:
   movs tos, r1
   bx lr
 
-    pushdaconstw 0x7000 @ strb r0, [r0, #0] Opcode
-    pushdaconstw 0x7800 @ ldrb r0, [r0, #0] Opcode
-    b.n plusstoreoptim
+    push {lr}
+      bl expect_two_elements
+      bl dup_allocator
+      bl allocator_1fetch
+      bl rot_allocator
+      bl plus_allocator
+      bl swap_allocator
+      bl allocator_1store
+    pop {pc}
 
-
-
+  .ltorg
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "bis!" @ ( x 32-addr -- )  Set bits
@@ -215,19 +448,15 @@ plusstoreoptim:
   movs tos, r1
   bx lr
 
-    pushdaconstw 0x6000 @ str r0, [r0, #0] Opcode
-    pushdaconstw 0x4300 @ orrs r0, r0      Opcode
-    pushdaconstw 0x6800 @ ldr r0, [r0, #0] Opcode
-
-kommutativstoreoptim:
     push {lr}
       bl expect_two_elements
       bl dup_allocator
-      bl alloc_speicherholen
+      bl allocator_4fetch
       bl rot_allocator
+      pushdaconstw 0x4300 @ orrs r0, r0      Opcode
       bl alloc_kommutativ
       bl swap_allocator
-      bl alloc_speicherschreiben
+      bl allocator_4store
     pop {pc}
 
 @ -----------------------------------------------------------------------------
@@ -241,19 +470,15 @@ kommutativstoreoptim:
   movs tos, r1
   bx lr
 
-    pushdaconstw 0x6000 @ str r0, [r0, #0] Opcode
-    pushdaconstw 0x4380 @ bics r0, r0      Opcode
-    pushdaconstw 0x6800 @ ldr r0, [r0, #0] Opcode
-
-unkommutativstoreoptim:
     push {lr}
       bl expect_two_elements
       bl dup_allocator
-      bl alloc_speicherholen
+      bl allocator_4fetch
       bl rot_allocator
+      pushdaconstw 0x4380 @ bics r0, r0      Opcode
       bl alloc_unkommutativ
       bl swap_allocator
-      bl alloc_speicherschreiben
+      bl allocator_4store
     pop {pc}
 
 @ -----------------------------------------------------------------------------
@@ -267,10 +492,16 @@ unkommutativstoreoptim:
   movs tos, r1
   bx lr
 
-    pushdaconstw 0x6000 @ str r0, [r0, #0] Opcode
-    pushdaconstw 0x4040 @ eors r0, r0      Opcode
-    pushdaconstw 0x6800 @ ldr r0, [r0, #0] Opcode
-    b.n kommutativstoreoptim
+    push {lr}
+      bl expect_two_elements
+      bl dup_allocator
+      bl allocator_4fetch
+      bl rot_allocator
+      pushdaconstw 0x4040 @ eors r0, r0      Opcode
+      bl alloc_kommutativ
+      bl swap_allocator
+      bl allocator_4store
+    pop {pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "bit@" @ ( x 32-addr -- Flag )  Check bits
@@ -291,15 +522,12 @@ unkommutativstoreoptim:
   bx lr
   .endif
 
-    pushdaconstw 0x6800 @ ldr r0, [r0, #0] Opcode
-
-bitfetchoptim:
     push {lr}
-    bl expect_two_elements
-    bl alloc_speicherholen
-    pushdaconstw 0x4000 @ ands r0, r0 Opcode
-    bl alloc_kommutativ
-    bl allocator_unequal_zero
+      bl expect_two_elements
+      bl allocator_4fetch
+      pushdaconstw 0x4000 @ ands r0, r0 Opcode
+      bl alloc_kommutativ
+      bl allocator_unequal_zero
     pop {pc}
 
 @ -----------------------------------------------------------------------------
@@ -313,10 +541,16 @@ bitfetchoptim:
   movs tos, r1
   bx lr
 
-    pushdaconstw 0x8000 @ strh r0, [r0, #0] Opcode
-    pushdaconstw 0x4300 @ orrs r0, r0       Opcode
-    pushdaconstw 0x8800 @ ldrh r0, [r0, #0] Opcode
-    b.n kommutativstoreoptim
+    push {lr}
+      bl expect_two_elements
+      bl dup_allocator
+      bl allocator_2fetch
+      bl rot_allocator
+      pushdaconstw 0x4300 @ orrs r0, r0      Opcode
+      bl alloc_kommutativ
+      bl swap_allocator
+      bl allocator_2store
+    pop {pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "hbic!" @ ( x 16-addr -- )  Clear bits
@@ -329,10 +563,16 @@ bitfetchoptim:
   movs tos, r1
   bx lr
 
-    pushdaconstw 0x8000 @ strh r0, [r0, #0] Opcode
-    pushdaconstw 0x4380 @ bics r0, r0       Opcode
-    pushdaconstw 0x8800 @ ldrh r0, [r0, #0] Opcode
-    b.n unkommutativstoreoptim
+    push {lr}
+      bl expect_two_elements
+      bl dup_allocator
+      bl allocator_2fetch
+      bl rot_allocator
+      pushdaconstw 0x4380 @ bics r0, r0      Opcode
+      bl alloc_unkommutativ
+      bl swap_allocator
+      bl allocator_2store
+    pop {pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "hxor!" @ ( x 16-addr -- )  Toggle bits
@@ -345,10 +585,16 @@ bitfetchoptim:
   movs tos, r1
   bx lr
 
-    pushdaconstw 0x8000 @ strh r0, [r0, #0] Opcode
-    pushdaconstw 0x4040 @ eors r0, r0       Opcode
-    pushdaconstw 0x8800 @ ldrh r0, [r0, #0] Opcode
-    b.n kommutativstoreoptim
+    push {lr}
+      bl expect_two_elements
+      bl dup_allocator
+      bl allocator_2fetch
+      bl rot_allocator
+      pushdaconstw 0x4040 @ eors r0, r0      Opcode
+      bl alloc_kommutativ
+      bl swap_allocator
+      bl allocator_2store
+    pop {pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "hbit@" @ ( x 16-addr -- Flag )  Check bits
@@ -369,8 +615,13 @@ bitfetchoptim:
   bx lr
   .endif
 
-    pushdaconstw 0x8800 @ ldrh r0, [r0, #0] Opcode
-    b.n bitfetchoptim
+    push {lr}
+      bl expect_two_elements
+      bl allocator_2fetch
+      pushdaconstw 0x4000 @ ands r0, r0 Opcode
+      bl alloc_kommutativ
+      bl allocator_unequal_zero
+    pop {pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "cbis!" @ ( x 8-addr -- )  Set bits
@@ -383,11 +634,16 @@ bitfetchoptim:
   movs tos, r1
   bx lr
 
-    pushdaconstw 0x7000 @ str r0, [r0, #0] Opcode
-    pushdaconstw 0x4300 @ orrs r0, r0      Opcode
-    pushdaconstw 0x7800 @ ldr r0, [r0, #0] Opcode
-    b.n kommutativstoreoptim
-
+    push {lr}
+      bl expect_two_elements
+      bl dup_allocator
+      bl allocator_1fetch
+      bl rot_allocator
+      pushdaconstw 0x4300 @ orrs r0, r0      Opcode
+      bl alloc_kommutativ
+      bl swap_allocator
+      bl allocator_1store
+    pop {pc}
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "cbic!" @ ( x 8-addr -- )  Clear bits
   @ Setzt die Bits in der Speicherstelle
@@ -399,10 +655,16 @@ bitfetchoptim:
   movs tos, r1
   bx lr
 
-    pushdaconstw 0x7000 @ str r0, [r0, #0] Opcode
-    pushdaconstw 0x4380 @ bics r0, r0      Opcode
-    pushdaconstw 0x7800 @ ldr r0, [r0, #0] Opcode
-    b.n unkommutativstoreoptim
+    push {lr}
+      bl expect_two_elements
+      bl dup_allocator
+      bl allocator_1fetch
+      bl rot_allocator
+      pushdaconstw 0x4380 @ bics r0, r0      Opcode
+      bl alloc_unkommutativ
+      bl swap_allocator
+      bl allocator_1store
+    pop {pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "cxor!" @ ( x 8-addr -- )  Toggle bits
@@ -415,10 +677,16 @@ bitfetchoptim:
   movs tos, r1
   bx lr
 
-    pushdaconstw 0x7000 @ str r0, [r0, #0] Opcode
-    pushdaconstw 0x4040 @ eors r0, r0      Opcode
-    pushdaconstw 0x7800 @ ldr r0, [r0, #0] Opcode
-    b.n kommutativstoreoptim
+    push {lr}
+      bl expect_two_elements
+      bl dup_allocator
+      bl allocator_1fetch
+      bl rot_allocator
+      pushdaconstw 0x4040 @ eors r0, r0      Opcode
+      bl alloc_kommutativ
+      bl swap_allocator
+      bl allocator_1store
+    pop {pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_allocator, "cbit@" @ ( x 8-addr -- Flag )  Check bits
@@ -439,7 +707,12 @@ bitfetchoptim:
   bx lr
   .endif
 
-    pushdaconstw 0x7800 @ ldrb r0, [r0, #0] Opcode
-    b.n bitfetchoptim
+    push {lr}
+      bl expect_two_elements
+      bl allocator_1fetch
+      pushdaconstw 0x4000 @ ands r0, r0 Opcode
+      bl alloc_kommutativ
+      bl allocator_unequal_zero
+    pop {pc}
 
 .ltorg

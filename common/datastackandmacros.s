@@ -201,8 +201,7 @@ psp .req r7
 .equ Flag_allocator_Rechenlogik_kommutativ, Flag_allocator|0x3000
 .equ Flag_allocator_Rechenlogik_unkommutativ, Flag_allocator|0x4000
 
-.equ Flag_allocator_Speicherholen, Flag_allocator|0x6000
-.equ Flag_allocator_Speicherschreiben, Flag_allocator|0x7000
+.equ Flag_Sprungschlucker, Flag_visible | 0x400
 
 @ -----------------------------------------------------------------------------
 @ Makros zum Bauen des Dictionary
@@ -300,7 +299,7 @@ psp .req r7
 .macro welcome Meldung
   bl dotgaensefuesschen
         .byte 8f - 7f         @ Compute length of name field.
-7:      .ascii "Mecrisp-Stellaris RA 0.1 experimental"
+7:      .ascii "Mecrisp-Stellaris RA 0.2 experimental"
         .ascii "\Meldung\n"
 8:      .p2align 1
 .endm

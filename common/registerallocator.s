@@ -467,23 +467,6 @@ expect_nos_in_register: @ Sorgt dafür, dass NOS auf jeden Fall einem Register l
 4:  @ Beide Argumente sind jetzt in Registern.
   pop {pc}
 
-
- @ -----------------------------------------------------------------------------
-tos_address_operand: @ TOS wird als Adresskonstante generiert und zum Opcode auf dem Stack passend hinzuverodert.
-@ -----------------------------------------------------------------------------
-  push {lr}
-    @ Sollte TOS gerade eine Konstante sein, generiere sie so gut es geht.
-    ldr r3, [r0, #offset_state_tos]
-    cmp r3, #constant
-    bne 2f
-      ldr r3, [r0, #offset_constant_tos]
-      bl generiere_adresskonstante
-2:  @ r3 sagt nun in jedem Fall, in welchem Register die Adresse zum Laden bereitliegt.
-    lsls r3, #3
-    orrs tos, r3
-
-  pop {pc}
-
 @ -----------------------------------------------------------------------------
 eliminiere_tos: @ Wert ist verbraucht, kann weg !
 @ -----------------------------------------------------------------------------
@@ -657,7 +640,6 @@ alloc_kommutativ_intern:
 
 1:
 
-
   @ -----------------------------------------------------------------------------
   cmp r1, #4
   bne 1f
@@ -709,53 +691,6 @@ alloc_unkommutativ_intern:
 1:
 
   @ -----------------------------------------------------------------------------
-  cmp r1, #6
-  bne 1f
-    @ writeln "Allocator - Speicher holen"
-alloc_speicherholen_intern:
-    bl expect_one_element
-    bl tos_address_operand
-
-    @ Elementkopien umschiffen - das Ladeergebnis benötigt auf jeden Fall einen frischen Register:
-    bl eliminiere_tos
-    bl befreie_tos
-    bl get_free_register
-    str r3, [r0, #offset_state_tos]
-
-    orrs tos, r3  @ Der Endzielregister ist gar nicht geschoben
-    bl hkomma
-
-    pop {r0, r1, r2, r3, pc}
-
-1:
-
-  @ -----------------------------------------------------------------------------
-  cmp r1, #7
-  bne 1f
-    @ writeln "Allocator - Speicher schreiben"
-alloc_speicherschreiben_intern:
-    bl expect_two_elements
-    bl tos_address_operand
-
-    @ Sollte NOS gerade eine Konstante sein, generiere sie so gut es geht.
-    ldr r3, [r0, #offset_state_nos]
-    cmp r3, #constant
-    bne 2f
-      ldr r3, [r0, #offset_constant_nos]
-      bl generiere_konstante
-2:  @ r3 sagt nun in jedem Fall, in welchem Register der Inhalt zum Schreiben bereitliegt.
-    orrs tos, r3
-
-    bl hkomma
-
-    bl eliminiere_tos
-    bl eliminiere_tos
-
-    pop {r0, r1, r2, r3, pc}
-
-1:
-
-  @ -----------------------------------------------------------------------------
   @ writeln "Allocator General-Spezialfall"
 
     drop @ Den schon geholten Opcode wieder vergessen - wir brauchen ihn hier nicht...
@@ -775,15 +710,6 @@ alloc_kommutativ:
 alloc_unkommutativ:
   push {r0, r1, r2, r3, lr}
   b.n alloc_unkommutativ_intern
-
-alloc_speicherholen:
-  push {r0, r1, r2, r3, lr}
-  b.n alloc_speicherholen_intern
-
-alloc_speicherschreiben:
-  push {r0, r1, r2, r3, lr}
-  b.n alloc_speicherschreiben_intern
-
 
   .ltorg
 
@@ -916,6 +842,9 @@ init_register_allocator:
 
   movs r1, #reg6
   str r1, [r0, #offset_state_tos]
+
+  movs r1, #0
+  str r1, [r0, #offset_sprungtrampolin]
 
   bx lr
 

@@ -83,13 +83,9 @@ allocator_unequal_zero:
   bx lr
   .endif
 
-    pushdaconstw 0xDB02 @ bls signed less             drei Befehle weiter
-    pushdaconstw 0xDA02 @ bge signed greater or equal drei Befehle weiter
-
-    push {lr}
-    bl allocator_compare
-    bl flaggenerator_inverted
-    pop {pc}
+    pushdaconstw 0xDB00 @ bls signed less
+    pushdaconstw 0xDA00 @ bge signed greater or equal
+    b.n prepare_compare
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_2|Flag_allocator, "<=" @ ( x1 x2 -- ? ) @ Meins
@@ -113,13 +109,9 @@ allocator_unequal_zero:
   bx lr
   .endif
 
-    pushdaconstw 0xDC02 @ bgt signed greater       drei Befehle weiter
-    pushdaconstw 0xDD02 @ bls signed less or equal drei Befehle weiter
-
-    push {lr}
-    bl allocator_compare
-    bl flaggenerator_inverted
-    pop {pc}
+    pushdaconstw 0xDC00 @ bgt signed greater
+    pushdaconstw 0xDD00 @ bls signed less or equal
+    b.n prepare_compare
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_2|Flag_allocator, "<" @ ( x1 x2 -- ? )
@@ -144,13 +136,9 @@ allocator_unequal_zero:
   bx lr
   .endif
 
-    pushdaconstw 0xDB01 @ bls signed less             zwei Befehle weiter
-    pushdaconstw 0xDA01 @ bge signed greater or equal zwei Befehle weiter
-
-    push {lr}
-    bl allocator_compare
-    bl flaggenerator
-    pop {pc}
+    pushdaconstw 0xDA00 @ bge signed greater or equal
+    pushdaconstw 0xDB00 @ bls signed less
+    b.n prepare_compare
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_2|Flag_allocator, ">" @ ( x1 x2 -- ? )
@@ -175,13 +163,9 @@ allocator_unequal_zero:
   bx lr
   .endif
 
-    pushdaconstw 0xDC01 @ bgt signed greater       zwei Befehle weiter
-    pushdaconstw 0xDD01 @ bls signed less or equal zwei Befehle weiter
-
-    push {lr}
-    bl allocator_compare
-    bl flaggenerator
-    pop {pc}
+    pushdaconstw 0xDD00 @ bls signed less or equal
+    pushdaconstw 0xDC00 @ bgt signed greater
+    b.n prepare_compare
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_foldable_2|Flag_allocator, "u>=" @ ( u1 u2 -- ? ) @ Meins
@@ -192,13 +176,9 @@ allocator_unequal_zero:
   mvns tos, tos
   bx lr
 
-    pushdaconstw 0xD302 @ blo unsigned lower          drei Befehle weiter
-    pushdaconstw 0xD202 @ bhs unsigned higher or same drei Befehle weiter
-
-    push {lr}
-    bl allocator_compare
-    bl flaggenerator_inverted
-    pop {pc}
+    pushdaconstw 0xD300 @ blo unsigned lower
+    pushdaconstw 0xD200 @ bhs unsigned higher or same
+    b.n prepare_compare
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_foldable_2|Flag_allocator, "u<=" @ ( u1 u2 -- ? ) @ Meins
@@ -209,13 +189,9 @@ allocator_unequal_zero:
   mvns tos, tos
   bx lr
 
-    pushdaconstw 0xD802 @ bhi unsigned higher        drei Befehle weiter
-    pushdaconstw 0xD902 @ bls unsigned lower or same drei Befehle weiter
-
-    push {lr}
-    bl allocator_compare
-    bl flaggenerator_inverted
-    pop {pc}
+    pushdaconstw 0xD800 @ bhi unsigned higher
+    pushdaconstw 0xD900 @ bls unsigned lower or same
+    b.n prepare_compare
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_foldable_2|Flag_allocator, "u<" @ ( u1 u2 -- ? )
@@ -225,13 +201,9 @@ allocator_unequal_zero:
   sbcs tos, tos
   bx lr
 
-    pushdaconstw 0xD301 @ blo unsigned lower          zwei Befehle weiter
-    pushdaconstw 0xD201 @ bhs unsigned higher or same zwei Befehle weiter
-
-    push {lr}
-    bl allocator_compare
-    bl flaggenerator
-    pop {pc}
+    pushdaconstw 0xD200 @ bhs unsigned higher or same
+    pushdaconstw 0xD300 @ blo unsigned lower
+    b.n prepare_compare
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_foldable_2|Flag_allocator, "u>" @ ( u1 u2 -- ? ) @ Meins
@@ -241,13 +213,9 @@ allocator_unequal_zero:
   sbcs tos, tos
   bx lr
 
-    pushdaconstw 0xD801 @ bhi unsigned higher        zwei Befehle weiter
-    pushdaconstw 0xD901 @ bls unsigned lower or same zwei Befehle weiter
-
-    push {lr}
-    bl allocator_compare
-    bl flaggenerator
-    pop {pc}
+    pushdaconstw 0xD900 @ bls unsigned lower or same
+    pushdaconstw 0xD800 @ bhi unsigned higher
+    b.n prepare_compare
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_foldable_2|Flag_allocator, "<>" @ ( x1 x2 -- ? )
@@ -267,12 +235,9 @@ allocator_unequal_zero:
   bx lr
   .endif
 
-    pushdaconstw 0xD101 @ bne zwei Befehle weiter
+    pushdaconstw 0xD000 @ Opcode: beq
     dup
-    push {lr}
-    bl allocator_compare
-    bl flaggenerator
-    pop {pc}
+    b.n prepare_compare
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_inline|Flag_foldable_2|Flag_allocator, "=" @ ( x1 x2 -- ? )
@@ -285,17 +250,42 @@ allocator_unequal_zero:
   sbcs tos, tos
   bx lr
 
-    pushdaconstw 0xD001 @ beq zwei Befehle weiter
+    pushdaconstw 0xD100 @ Opcode: bne
     dup
-    push {lr}
-    bl allocator_compare
-    bl flaggenerator
-    pop {pc}
+    b.n prepare_compare
 
+ .ltorg
 
-allocator_compare:
+@ -----------------------------------------------------------------------------
+prepare_compare:
+@ -----------------------------------------------------------------------------
+
     push {lr} @ So ähnlich wie die Optimierungen in Plus und Minus
     bl expect_two_elements @ Zwei Elemente, die NICHT verändert werden. Mindestens eins davon ist ein Register, sonst würde gefaltet werden.
+
+    @ Es gibt maximal drei Elemente im RA. Zwei werden am Ende dieser Prozedur rausfliegen.
+    @ Kontrollstrukturen, die ein Sprungopcode aufnehmen und über die Flags kommunizieren, müssen sowieso zurück zum kanonischen Stack.
+    @ Das Schieben / Umladen ist Flag-Erhaltend, nur das Generieren von Konstanten täte weh.
+    @ Wenn also 3OS hier eine Konstante ist, wird ein freier Register angefordert und sie hineingeladen, damit später das Zurück-zum-kanonischen-Stack funktioniert.
+
+    ldr r3, [r0, #offset_state_3os]
+    cmp r3, #constant
+    bne 6f
+
+      @ 3OS ist eine Konstante. Packe sie jetzt und sofort in einen Register !
+      bl get_free_register
+      str r3, [r0, #offset_state_3os] @ Setze den neuen Register von 3OS
+
+      @ Ist sie schon in r0 oder r1 ? Dann übernehmen ! ***********************************************************************************************
+      @ Hier erstmal zum Ausprobieren radikal frisch in den Register hineingenerieren.
+
+      pushdatos
+      ldr tos, [r0, #offset_constant_3os] @ Hole die Konstante
+      pushda r3 @ Zielregister
+      bl registerliteralkomma
+
+6:  @ 3OS ist unschädlich/unschädlich gemacht worden.
+
 
     @ Ist in TOS oder in NOS eine kleine Konstante ?
     ldr r2, [r0, #offset_state_nos]
@@ -346,6 +336,29 @@ allocator_compare:
     bl eliminiere_tos
     bl eliminiere_tos
 
+    @ Das Ergebnis ist jetzt erstmal nur in den Flags - welche bei Bedarf von einem Flaggenerator geschrieben werden oder von einer Kontrollstruktur direkt geschluckt.
+
+    str tos, [r0, #offset_sprungtrampolin]
+    drop
+    pop {pc}
+
+@ -----------------------------------------------------------------------------
+sprungschreiber_flaggenerator:
+@ -----------------------------------------------------------------------------
+  push {r0, r1, r2, r3, lr}
+    @ writeln "Sprungschreiber"
+    ldr r0, =allocator_base
+    ldr r1, [r0, #offset_sprungtrampolin]
+    cmp r1, #0
+    beq 1f
+
+      pushdatos
+      ldr tos, [r0, #offset_sprungtrampolin]
+      adds tos, #2 @ Flaggenerator_inverted benötigt einen Sprung drei Befehle weiter
+        movs r1, #0
+        str r1, [r0, #offset_sprungtrampolin]
+
+    @ ( Sprungopcode -- )
     @ Kümmere mich um das Ergebnis !
 
     bl befreie_tos
@@ -356,24 +369,7 @@ allocator_compare:
 
     @ Bedingten Sprung schreiben, um Flag zu generieren
     bl hkomma
-    pop {pc}
 
-
-flaggenerator:
-  push {lr}
-    pushdaconstw 0x2000 @ movs r0, #0
-    bl smallplusminus
-
-    pushdaconstw 0xE001 @ b zwei Befehle weiter
-    bl hkomma
-
-    pushdaconstw 0x2000 @ movs r0, #0
-    bl smallplusminus
-    bl allocator_not @ Generates: mvns r0, r0
-  pop {pc}
-
-flaggenerator_inverted:
-  push {lr}
     pushdaconstw 0x2000 @ movs r0, #0
     bl smallplusminus
     bl allocator_not @ Generates: mvns r0, r0
@@ -382,8 +378,8 @@ flaggenerator_inverted:
     bl hkomma
     pushdaconstw 0x2000 @ movs r0, #0
     bl smallplusminus
-  pop {pc}
 
+1:pop {r0, r1, r2, r3, pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_foldable_2|Flag_inline, "min" @ ( x1 x2 -- x3 )

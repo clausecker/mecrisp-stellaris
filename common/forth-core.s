@@ -59,6 +59,8 @@ ramallot constant_nos, 4
 ramallot state_3os, 4
 ramallot constant_3os, 4
 
+ramallot sprungtrampolin, 4
+
 .equ allocator_base, state_r0
 .equ offset_state_r0,     0 * 4
 .equ offset_constant_r0,  1 * 4
@@ -70,6 +72,7 @@ ramallot constant_3os, 4
 .equ offset_constant_nos, 7 * 4
 .equ offset_state_3os,    8 * 4
 .equ offset_constant_3os, 9 * 4
+.equ offset_sprungtrampolin, 10 * 4
 
 @ Jetzt kommen Puffer und Stacks:  Buffers and Stacks
 
@@ -113,7 +116,7 @@ ramallot returnstackanfang, 0
 @ Preparations for dictionary structure
 @ -----------------------------------------------------------------------------
 
-CoreDictionaryAnfang: @ Dictionary-Einsprungpunkt setzen 
+CoreDictionaryAnfang: @ Dictionary-Einsprungpunkt setzen
                       @ Set entry point for Dictionary
 
 .set CoreVariablenPointer, RamDictionaryEnde @ Im Flash definierte Variablen kommen ans RAM-Ende
@@ -127,9 +130,9 @@ CoreDictionaryAnfang: @ Dictionary-Einsprungpunkt setzen
 
   .include "../common/registerallocator.s"
   .ltorg @ Mal wieder Konstanten schreiben
-  
+
   .include "../common/double.s"
-  .include "../common/stackjugglers.s" 
+  .include "../common/stackjugglers.s"
   .include "../common/logic.s"
   .include "../common/comparisions.s"
   .ltorg @ Mal wieder Konstanten schreiben
@@ -146,7 +149,7 @@ CoreDictionaryAnfang: @ Dictionary-Einsprungpunkt setzen
   .include "../common/flash16bytesblockwrite.s"
   .ltorg @ Mal wieder Konstanten schreiben
   .endif
-  
+
   .include "../common/calculations.s"
   .include "terminal.s"
   .include "../common/query.s"

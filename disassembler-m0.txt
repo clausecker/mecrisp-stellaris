@@ -1,6 +1,8 @@
 
 compiletoflash
 
+here
+
 \ ARM Cortex M0 Disassembler, Copyright (C) 2013  Matthias Koch
 \ This is free software under GNU General Public License v3.
 \ Knows M0 machine instructions, resolves call entry points,
@@ -407,3 +409,14 @@ see gray>
 ;
 
 16 gray-demo
+
+3 variable a
+4 variable b
+5 variable c
+
+: fetch 11 a ! 12 b ! 13 c ! a @ b @ + c @ + . ;
+see fetch
+fetch
+
+\ Mecrisp-Stellaris 2.1.4: 7976 Bytes.
+here swap - .

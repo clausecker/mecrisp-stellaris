@@ -77,6 +77,7 @@ dup_allocator:
   drop
   bx lr
 
+drop_allocator:
     push {lr} @ Spezialeinsprung des Registerallokators:
     @ Falten geht von selbst vorher.
     @ Wenn kein Element da ist, generiere den regulären drop-Opcode:
@@ -166,6 +167,7 @@ swap_allocator:
   ldr tos, [psp, #4]
   bx lr
 
+over_allocator:
     push {lr} @ Spezialeinsprung des Registerallokators:
 
     bl expect_two_elements
@@ -294,31 +296,68 @@ minusrot:
 @ Returnstack
 
 @------------------------------------------------------------------------------
-  Wortbirne Flag_visible|Flag_inline, ">r" @ Legt das oberste Element des Datenstacks auf den Returnstack.
+  Wortbirne Flag_inline|Flag_allocator, ">r" @ Legt das oberste Element des Datenstacks auf den Returnstack.
 @------------------------------------------------------------------------------
   push {tos}
   ldm psp!, {tos}
   bx lr
 
+allocator_to_r:
+    push {lr}
+    bl expect_one_element
+    bl expect_tos_in_register @ Gibt den Register in r1 zurück.
+
+    pushdaconstw 0xB400 @ push {...}
+
+    movs r2, #1
+    lsls r2, r1
+    orrs tos, r2
+
+    bl hkomma
+    bl eliminiere_tos
+    pop {pc}
+
 @------------------------------------------------------------------------------
-  Wortbirne Flag_visible|Flag_inline, "r>" @ Holt das zwischengespeicherte Element aus dem Returnstack zurück
+  Wortbirne Flag_inline|Flag_allocator, "r>" @ Holt das zwischengespeicherte Element aus dem Returnstack zurück
 @------------------------------------------------------------------------------
   pushdatos
   pop {tos}
   bx lr
 
+allocator_r_from:
+    push {lr}
+    bl befreie_tos
+    bl get_free_register
+    str r3, [r0, #offset_state_tos]
+
+    pushdaconstw 0xBC00 @ pop {...}
+
+    movs r2, #1
+    lsls r2, r3
+    orrs tos, r2
+
+    bl hkomma
+    pop {pc}
+
 @------------------------------------------------------------------------------
-  Wortbirne Flag_visible|Flag_inline, "r@" @ Kopiert das oberste Element des Returnstacks auf den Datenstack
+  Wortbirne Flag_inline|Flag_allocator, "r@" @ Kopiert das oberste Element des Returnstacks auf den Datenstack
 @------------------------------------------------------------------------------
   pushdatos
   ldr tos, [sp]
   bx lr
+    push {lr}
+    bl rfetch_allocator
+    pop {pc}
 
 @------------------------------------------------------------------------------
-  Wortbirne Flag_visible|Flag_inline, "rdrop" @ Entfernt das oberste Element des Returnstacks
+  Wortbirne Flag_inline|Flag_allocator, "rdrop" @ Entfernt das oberste Element des Returnstacks
 @------------------------------------------------------------------------------
   add sp, #4
   bx lr
+    push {lr}
+    pushdaconstw 0xB001  @ Opcode add sp, #4
+    bl hkomma
+    pop {pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible|Flag_inline, "rpick" @ ( u -- xu R: xu .. x1 x0 -- xu ... x1 x0 )

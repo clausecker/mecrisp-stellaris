@@ -132,8 +132,10 @@ interpret:
     @ Nicht gefunden. Ein Fall für Number.
     @ Entry-Address is zero if not found ! Note that Flags have very special meanings in Mecrisp !
 
-    ldr r0, [psp]
+    ldr r0, [psp] @ Den String für die not-found Meldung vermerken.
     movs r1, tos
+
+    bl sprungschreiber_flaggenerator @ Wenn noch mehr Faltkonstanten kommen, müssen die Ergebnisse von Vergleichen vorher geschrieben werden.
 
     bl number
 
@@ -199,6 +201,16 @@ not_found_addr_r0_len_r1:
 5:@ Im Kompilierzustand.  In compile state.
     ddrop
 
+    ldr r0, =Flag_Sprungschlucker & ~Flag_visible
+    ands r0, r1
+    bne.n .interpret_entsprungen
+      bl sprungschreiber_flaggenerator
+
+.interpret_entsprungen:
+    @ Jetzt dürfen keine Sprünge mehr im Sprungtrampolin warten, falls sie nicht vom Allokator später eingebaut werden.
+
+
+
     @ Prüfe das Ramallot-Flag, das automatisch 0-faltbar bedeutet:
     @ Ramallot-Words always are 0-foldable !
     @ Check this first, as Ramallot is set together with foldability,
@@ -248,7 +260,7 @@ not_found_addr_r0_len_r1:
   @ Entry-Point of Definition in r2
   @ Number of folding constants available in r3
 
-  ldr r0, =Flag_allocator
+  ldr r0, =Flag_allocator & ~Flag_visible
   ands r0, r1
   beq.n .interpret_allocator_finished
 
@@ -268,14 +280,13 @@ not_found_addr_r0_len_r1:
 .interpret_allocator_finished:
 
   @ No optimizations possible. Go back to canonical stack for classic compilation.
+  @ Write all folding constants left into dictionary.
 
   bl nflush_faltkonstanten     @ Vorhandene Faltkonstanten, soweit möglich, erstmal in den Registerallokator laden.
   bl tidyup_register_allocator @ Alle Registerbewegungen opcodieren
 
-    @ No optimizations possible. Compile the normal way.
-    @ Write all folding constants left into dictionary.
-
-  bl konstantenschreiben
+  movs r5, #0   @ Konstantenfaltungszeiger löschen  Clear constant folding pointer.
+  str r5, [r4]
 
 @ -----------------------------------------------------------------------------
   @ Classic compilation.
@@ -297,46 +308,6 @@ not_found_addr_r0_len_r1:
 
 7:bl callkomma @ Klassisch einkompilieren  Simply compile a BL or Call.
   b.n 1b @ Zurück in die Interpret-Schleife  Finished.
-
-
-
-
-@ -----------------------------------------------------------------------------
-konstantenschreiben: @ Special internal entry point with register dependencies.
-@ -----------------------------------------------------------------------------
-    push {lr}
-    cmp r3, #0   @ Null Konstanten liegen bereit ? Zero constants available ?
-    beq.n 7f     @ Dann ist nichts zu tun.         Nothing to write.
-
-.konstanteninnenschleife:
-    @ Schleife über r5 :-)
-    @ Loop for writing all folding constants left.
-    subs r3, #1 @ Weil Pick das oberste Element mit Null addressiert.
-
-    .ifdef m0core
-    pushdatos
-    lsls tos, r3, #2
-    ldr tos, [psp, tos]
-    .else
-    pushda r3
-    ldr tos, [psp, tos, lsl #2] @ pick
-    .endif
-
-    bl literalkomma
-
-    cmp r3, #0
-    bne.n .konstanteninnenschleife
-
-    @ Die geschriebenen Konstanten herunterwerfen.
-    @ Drop constants written.
-    subs r5, #4  @ TOS wurde beim drauflegen der Konstanten gesichert.
-    movs psp, r5  @ Pointer zurückholen
-    drop         @ Das alte TOS aus seinem Platz auf dem Stack zurückholen.
-
-7:movs r5, #0   @ Konstantenfaltungszeiger löschen  Clear constant folding pointer.
-  str r5, [r4]
-  pop {pc}
-
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_visible|Flag_variable, "hook-quit" @ ( -- addr )
