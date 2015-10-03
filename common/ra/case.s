@@ -49,7 +49,7 @@ struktur_qof: @ Will be inlined.
   bx lr
 
 @------------------------------------------------------------------------------
-  Wortbirne Flag_immediate_compileonly|Flag_opcodierbar_Spezialfall, "of"
+  Wortbirne Flag_immediate_compileonly|Flag_allocator, "of"
   @ ( ... #of 8 -- ... addr #of+1 9 )
 @------------------------------------------------------------------------------
   ldr r0, =struktur_of
@@ -80,62 +80,87 @@ of_opcodiereinsprung:
   pop {pc}
 
 @------------------------------------------------------------------------------
-  @ Opcodable optimisations enter here.
-  push {lr}
-
-  popda r0 @ Fetch constant for folding
-  subs r3, #1 @ One constant less
-  push {r0}
-  bl konstantenschreiben @ Write all other constants in dictionary
-  pop {r0}
-
-  @ Generate opcodes
 
   cmp tos, #8                  @ Check for structure pattern: Give error message and quit if wrong.
   beq 1f
   b.n strukturen_passen_nicht
 1:drop
 
-  @ r0 contains constant for this case comparision.
-  pushda r0
+  push {lr}
+  @ Mich interessieren nur die beiden obersten Elemente, die verglichen werden sollen.  
+  bl expect_two_elements @ Mindestens 2 Elemente
+  bl tidyup_register_allocator_3os @ Maximal 2 Elemente, das dritte gleich in den Stack schieben.
+  
+  @ Jetzt habe ich genau zwei Elemente im Allokator.
+  @ NOS bleibt im Falle von CASE eigentlich die ganze Zeit gleich - erwarte NOS also in jedem Fall in einem Register.
 
-    @ Is constant small enough to fit in one Byte ?
-    movs r1, #0xFF  @ Mask for 8 Bits
-    ands r1, tos
-    cmp r1, tos
-    bne.n 2f
-    @ Equal ? Constant fits in 8 Bits.
+  pushdaconstw 0x4280 @ cmp r0, r0    
+  bl expect_nos_in_register @ Dieser Register ist anschließend in r1.
+  orrs tos, r1
 
-    ldr r1, =0x2E00 @ Opcode cmp r6, #0
-    orrs tos, r1     @ Or together with constant
-    bl hkomma
-    b.n of_opcodiereinsprung
+  @ TOS könnte eine Konstante sein. Diese darf ich jetzt aber nicht über die beiden Konstantenregister generieren...
+  ldr r2, [r0, #offset_state_tos]
+  cmp r2, #constant
+  bne 2f
+    @ TOS ist eine Konstante.
+    @ Kleine Konstanten direkt als cmp-opcode schreiben:
+    ldr r2, [r0, #offset_constant_tos]
+    cmp r2, #0xFF
+    bhi 3f
+      @ Kleine Konstante:
+      drop
+      pushdaconstw 0x2800
+      orrs tos, r2
+      lsls r1, #8
+      orrs tos, r1
+      b.n 4f 
+    
+3:  
 
-2:  
+.ifndef m0core
+  @ TOS ist eine Konstante, aber zu groß für Imm8.
+  @ Vielleicht passt sie in Imm12 ?
 
-    .ifndef m0core
-      @ M3/M4 cores offer additional opcodes with 12-bit encoded constants.
-      bl twelvebitencoding
+        pushdatos
+        ldr tos, [r0, #offset_constant_tos]
+        bl twelvebitencoding @ Hole sie und prüfe, ob sie als Imm12 darstellbar ist.
+        ldmia psp!, {r2} @ Entweder die Bitmaske oder wieder die Konstante
 
-      cmp tos, #0
-      drop   @ Preserves Flags !
-      beq 3f
-        @ Encoding of constant within 12 bits is possible.
-        ldr r0, =0xF1B60F00 @ Opcode subs pc, tos, #imm12 = cmp tos, #imm12
-        orrs tos, r0
-        bl reversekomma
-        b.n of_opcodiereinsprung
+        cmp tos, #0
+        drop   @ Preserves Flags !
+        beq 3f
+          @ Die Konstante lässt sich als Imm12 darstellen - fein ! Bitmaske liegt in r1 bereit
+          @ Prüfe nun den Opcode, und ersetze ihn, falls möglich.
+
+          @ drop @ Den alten cmp r0, r0 Opcode vergessen
+          @ pushdatos
+          ldr tos, =0xF1B00F00 @ cmp r0, #Imm12 = cmp pc, r0, #Imm12
+          orrs tos, r2
+
+          orrs tos, tos, r1, lsl #16 @ Quellregister hinzufügen
+          bl reversekomma
+          b 5f
 3:
-    .endif  
+.endif
 
-  @ Generate constant for comparision
-  pushdaconst 0
-  bl registerliteralkomma
-
-  pushdaconstw 0x42B0 @ cmp r0, tos  
-  bl hkomma
-  b.n of_opcodiereinsprung
-
+    @ Konstante zu groß. Lade die Konstante in einen freien Register:
+    pushda r2
+    bl get_free_register
+    movs r2, r3
+    pushda r3
+    bl registerliteralkomma
+  
+2:@ TOS ist auch ein Register.
+  lsls r2, #3
+  orrs tos, r2
+    
+4:bl hkomma
+  
+5:bl eliminiere_tos
+  bl tidyup_register_allocator_tos @ Falls TOS <> r6 an diesem Moment... Falls es eine Konstante gewesen ist, wurde sie eben gerade schon generiert.
+  
+  b.n of_opcodiereinsprung @ Der klassische Abschluss  
+  
 
 struktur_of:
   popda r0
