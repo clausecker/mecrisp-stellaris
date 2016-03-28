@@ -25,7 +25,8 @@
 @ -----------------------------------------------------------------------------
 
 .equ m0core, 1
-@ .equ charkommaavailable, 1    Not available !
+.equ emulated16bitflashwrites, 1
+@ Not available:  .equ charkommaavailable, 1
 
 @ -----------------------------------------------------------------------------
 @ Start with some essential macro definitions
@@ -40,14 +41,14 @@
 
 @ Konstanten für die Größe des Ram-Speichers
 
-.equ RamAnfang, 0x20000000 @ Start of RAM          Porting: Change this !
-.equ RamEnde,   0x20002000 @ End   of RAM.   8 kb. Porting: Change this !
+.equ RamAnfang, 0x1FFFE000 @ Start of RAM          Porting: Change this !
+.equ RamEnde,   0x20006000 @ End   of RAM.  32 kb. Porting: Change this !
 
 @ Konstanten für die Größe und Aufteilung des Flash-Speichers
 
 .equ Kernschutzadresse,     0x00004000 @ Darunter wird niemals etwas geschrieben ! Mecrisp core never writes flash below this address.
 .equ FlashDictionaryAnfang, 0x00004000 @ 16 kb für den Kern reserviert...           16 kb Flash reserved for core.
-.equ FlashDictionaryEnde,   0x00010000 @ 48 kb Platz für das Flash-Dictionary       48 kb Flash available. Porting: Change this !
+.equ FlashDictionaryEnde,   0x00040000 @ 240 kb Platz für das Flash-Dictionary     240 kb Flash available. Porting: Change this !
 .equ Backlinkgrenze,        RamAnfang  @ Ab dem Ram-Start.
 
 
@@ -67,6 +68,12 @@
 @ -----------------------------------------------------------------------------
 Reset: @ Einsprung zu Beginn
 @ -----------------------------------------------------------------------------
+
+   @ Disable the watchdog timer
+   movs r1, #0
+   ldr  r0, =0x40048100 @ SIM_COPC
+   str  r1, [r0]
+
    @ Initialisierungen der Hardware, habe und brauche noch keinen Datenstack dafür
    @ Initialisations for Terminal hardware, without Datastack.
    bl uart_init
@@ -74,7 +81,7 @@ Reset: @ Einsprung zu Beginn
    @ Catch the pointers for Flash dictionary
    .include "../common/catchflashpointers.s"
 
-   welcome " with M0 core for EFM32HG322 by Matthias Koch"
+   welcome " with M0 core for KL46Z256 by Matthias Koch"
 
    @ Ready to fly !
    .include "../common/boot.s"
