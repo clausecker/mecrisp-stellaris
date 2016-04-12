@@ -1,5 +1,16 @@
 
-\ A small blinky example for KL46Z256
+\ A small blinky example for Freedom K64F
+
+\ RGB LED with common anode connected to Vcc:
+
+\ PTB22 Red
+\ PTE26 Green
+\ PTB21 Blue
+
+\ Buttons:
+
+\ PTA4 SW3
+\ PTC6 SW2
 
 $400FF000 constant GPIOA_PDOR   \ Port Data Output Register
 $400FF004 constant GPIOA_PSOR   \ Port Set Output Register
@@ -57,26 +68,62 @@ $4004D080 constant PORTE_GPCLR
 $4004D084 constant PORTE_GPCHR
 
 
-: led  ( ? -- ) if 1 5 lshift GPIOD_PSOR ! else 1 5 lshift GPIOD_PCOR ! then ;
-: sw1? ( -- ? ) 1 12 lshift GPIOC_PDIR bit@ not ;
-: sw3? ( -- ? ) 1  3 lshift GPIOC_PDIR bit@ not ;
+: init-leds-and-buttons ( -- )
 
-: short ( -- ) 1000000 0 do loop ;
-: long  ( -- ) 5000000 0 do loop ;
+  \ Set Switches as inputs
 
-: blinky ( -- )
-  \ Buttons on PC3 and PC12, LED on PD5
+  $0100  4 4 * PORTA_PCR + !
+  $0100  6 4 * PORTC_PCR + !
 
-  $0103   3 4 * PORTC_PCR + ! \ Set Port C3  as GPIO with pullup resistor
-  $0103  12 4 * PORTC_PCR + ! \ Set Port C12 as GPIO with pullup resistor
-  $0100   5 4 * PORTD_PCR + ! \ Set Port D5  as GPIO
+  \ Set LEDs as outputs
 
-  1 5 lshift GPIOD_PDDR ! \ Port D5 Output
+  $0100  26 4 * PORTE_PCR + !
+  1 26 lshift GPIOE_PDDR !
+
+  $0100  21 4 * PORTB_PCR + !
+  $0100  22 4 * PORTB_PCR + !
+  1 21 lshift 1 22 lshift or GPIOB_PDDR !
+;
+
+: rgb ( -- )
+  init-leds-and-buttons
+  begin
+    key
+    dup
+    case
+      [char] r of 1 22 lshift GPIOB_PTOR ! endof
+      [char] g of 1 26 lshift GPIOE_PTOR ! endof
+      [char] b of 1 21 lshift GPIOB_PTOR ! endof
+    endcase
+    27 =
+  until
+;
+
+: sw3? ( -- ? ) 1 4 lshift GPIOA_PDIR bit@ not ;
+: sw2? ( -- ? ) 1 6 lshift GPIOC_PDIR bit@ not ;
+
+: red   ( ? -- ) if 1 22 lshift GPIOB_PCOR ! else 1 22 lshift GPIOB_PSOR ! then ;
+: green ( ? -- ) if 1 26 lshift GPIOE_PCOR ! else 1 26 lshift GPIOE_PSOR ! then ;
+: blue  ( ? -- ) if 1 21 lshift GPIOB_PCOR ! else 1 21 lshift GPIOB_PSOR ! then ;
+
+: blinky
+  init-leds-and-buttons
+
+  false red
+  false green
+  false blue
 
   begin
-    true led
-    sw1? if long else short then
-    false led
-    sw3? if long else short then
+
+    sw3? not red
+    sw2? not blue
+
+    1000000 0 do loop
+
+    false red
+    false blue
+
+    1000000 0 do loop
+
   key? until
 ;
