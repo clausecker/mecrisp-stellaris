@@ -17,15 +17,15 @@
 @
 
 .syntax unified
-.cpu cortex-m0
+.cpu cortex-m4
 .thumb
 
 @ -----------------------------------------------------------------------------
 @ Swiches for capabilities of this chip
 @ -----------------------------------------------------------------------------
 
-.equ m0core, 1
-@ .equ charkommaavailable, 1    Not available !
+.equ registerallocator, 1
+.equ charkommaavailable, 1
 
 @ -----------------------------------------------------------------------------
 @ Start with some essential macro definitions
@@ -40,14 +40,14 @@
 
 @ Konstanten für die Größe des Ram-Speichers
 
-.equ RamAnfang, 0x20000000 @ Start of RAM          Porting: Change this !
-.equ RamEnde,   0x20002000 @ End   of RAM.   8 kb. Porting: Change this !
+.equ RamAnfang, 0x01000000 @ Start of RAM          Porting: Change this !
+.equ RamEnde,   0x01010000 @ End   of RAM.  64 kb. Porting: Change this !
 
 @ Konstanten für die Größe und Aufteilung des Flash-Speichers
 
-.equ Kernschutzadresse,     0x00004000 @ Darunter wird niemals etwas geschrieben ! Mecrisp core never writes flash below this address.
-.equ FlashDictionaryAnfang, 0x00004000 @ 16 kb für den Kern reserviert...           16 kb Flash reserved for core.
-.equ FlashDictionaryEnde,   0x00010000 @ 48 kb Platz für das Flash-Dictionary       48 kb Flash available. Porting: Change this !
+.equ Kernschutzadresse,     0x00005000 @ Darunter wird niemals etwas geschrieben ! Mecrisp core never writes flash below this address.
+.equ FlashDictionaryAnfang, 0x00005000 @ 20 kb für den Kern reserviert...           20 kb Flash reserved for core.
+.equ FlashDictionaryEnde,   0x00040000 @ 236 kb Platz für das Flash-Dictionary     236 kb Flash available. Porting: Change this !
 .equ Backlinkgrenze,        RamAnfang  @ Ab dem Ram-Start.
 
 
@@ -67,6 +67,19 @@
 @ -----------------------------------------------------------------------------
 Reset: @ Einsprung zu Beginn
 @ -----------------------------------------------------------------------------
+
+   @ Stop Watchdog timer
+   ldr  r1, =WDTPW|WDTHOLD
+   ldr  r0, =WDTCTL
+   strh r1, [r0]
+
+@    Let red LED shine
+@    movs r1, #1 @ Switch on P1.0
+@    ldr  r0, =P1DIR
+@    strb r1, [r0]
+@    ldr r0, =P1OUT
+@    strb r1, [r0]
+
    @ Initialisierungen der Hardware, habe und brauche noch keinen Datenstack dafür
    @ Initialisations for Terminal hardware, without Datastack.
    bl uart_init
@@ -74,7 +87,12 @@ Reset: @ Einsprung zu Beginn
    @ Catch the pointers for Flash dictionary
    .include "../common/catchflashpointers.s"
 
-   welcome " with M0 core for EFM32HG322 by Matthias Koch"
+@   Dark again
+@   movs r1, #0 @ Switch off P1.0
+@   ldr r0, =P1OUT
+@   strb r1, [r0]
+
+   welcome " for MSP432P401R by Matthias Koch"
 
    @ Ready to fly !
    .include "../common/boot.s"

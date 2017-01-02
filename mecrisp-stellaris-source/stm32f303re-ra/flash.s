@@ -16,29 +16,25 @@
 @    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @
 
-@ Routines to write and erase Flash memory in EFM32GG990F1024.
-@ Porting: Rewrite this !
-@ You need hflash! and - as far as possible - cflash!
+@ Schreiben und Löschen des Flash-Speichers im STM32F303.
 
-.equ MSC_Base, 0x400C0000
+@ In diesem Chip gibt es Flashschreibzugriffe mit wählbarer Breite -
+@ so ist es diesmal ganz komfortabel. Leider gibt es nur weniger große
+@ Sektoren, die getrennt gelöscht werden können.
 
-.equ MSC_CTRL,        MSC_Base + 0x00 @ Memory System Control Register
-.equ MSC_READCTRL,    MSC_Base + 0x04 @ Read Control Register
-.equ MSC_WRITECTRL,   MSC_Base + 0x08 @ Write Control Register
-.equ MSC_WRITECMD,    MSC_Base + 0x0C @ Write Command Register
-.equ MSC_ADDRB,       MSC_Base + 0x10 @ Page Erase/Write Address Buffer
-.equ MSC_WDATA,       MSC_Base + 0x18 @ Write Data Register
-.equ MSC_STATUS,      MSC_Base + 0x1C @ Status Register
-.equ MSC_IF,          MSC_Base + 0x2C @ Interrupt Flag Register
-.equ MSC_IFS,         MSC_Base + 0x30 @ Interrupt Flag Set Register
-.equ MSC_IFC,         MSC_Base + 0x34 @ Interrupt Flag Clear Register
-.equ MSC_IEN,         MSC_Base + 0x38 @ Interrupt Enable Register
-.equ MSC_LOCK,        MSC_Base + 0x3C @ Configuration Lock Register
-.equ MSC_CMD,         MSC_Base + 0x40 @ Command Register
-.equ MSC_CACHEHITS,   MSC_Base + 0x44 @ Cache Hits Performance Counter
-.equ MSC_CACHEMISSES, MSC_Base + 0x48 @ Cache Misses Performance Counter
-.equ MSC_TIMEBASE,    MSC_Base + 0x50 @ Flash Write and Erase Timebase
-.equ MSC_MASSLOCK,    MSC_Base + 0x54 @ Mass Erase Lock Register
+@ Write and Erase Flash in STM32F303.
+@ Porting: Rewrite this ! You need hflash! and - as far as possible - cflash!
+
+
+.equ FLASH_Base, 0x40022000
+
+.equ FLASH_ACR,     FLASH_Base + 0x00 @ Flash Access Control Register
+.equ FLASH_KEYR,    FLASH_Base + 0x04 @ Flash Key Register
+.equ FLASH_OPTKEYR, FLASH_Base + 0x08 @ Flash Option Key Register
+.equ FLASH_SR,      FLASH_Base + 0x0C @ Flash Status Register
+.equ FLASH_CR,      FLASH_Base + 0x10 @ Flash Control Register
+.equ FLASH_AR,      FLASH_Base + 0x14 @ Flash Address Register
+.equ FLASH_OBR,     FLASH_Base + 0x1C @ Flash Option Byte Register
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "hflash!" @ ( x Addr -- )
@@ -77,51 +73,40 @@ h_flashkomma:
 
   @ Okay, alle Proben bestanden. 
 
-@         1 msc_writectrl !
-@     $8000 msc_addrb ! 
-@ $12345678 msc_wdata !
-@         1 msc_writecmd !
-@         8 msc_writecmd !
-@         0 msc_writectrl !
+  @ Im STM32F051 ist der Flash-Speicher gespiegelt, die wirkliche Adresse liegt weiter hinten !
+  @ Flash memory is mirrored, use true address later for write
+  ldr r2, =0x08000000
+  adds r0, r2
 
-  @ r0: Adresse
-  @ r1: Inhalt
+  @ Bereit zum Schreiben !
 
-  ldr r2, =MSC_WRITECTRL
-  movs r3, #1
+  @ Unlock Flash Control
+  ldr r2, =FLASH_KEYR
+  ldr r3, =0x45670123
+  str r3, [r2]
+  ldr r3, =0xCDEF89AB
   str r3, [r2]
 
-  ldr r2, =MSC_ADDRB
-  bics r3, r0, #2
+  @ Enable write
+  ldr r2, =FLASH_CR
+  movs r3, #1 @ Select Flash programming
   str r3, [r2]
 
-  ldr r2, =MSC_WDATA
-  tst r0, #2
-  bne 4f
-  @ Lower 16 Bits
-    movt r1, #0xFFFF
-    b 5f
-4:@ Higher 16 Bits
-    lsls r1, #16
-    movw r3, #0xFFFF
-    orrs r1, r3
-5:str r1, [r2]
+  @ Write to Flash !
+  strh r1, [r0]
 
-  ldr r2, =MSC_WRITECMD
-  movs r3, #1
-  str r3, [r2]
+  @ Wait for Flash BUSY Flag to be cleared
+  ldr r2, =FLASH_SR
 
-  ldr r2, =MSC_WRITECMD
-  movs r3, #8
-  str r3, [r2]
+1:  ldr r3, [r2]
+    @ ands r3, #1
+    movs r0, #1
+    ands r0, r3
+    bne 1b
 
-  ldr r2, =MSC_STATUS
-1:ldr r3, [r2]
-  ands r3, #1   @ Wait for Flash BUSY Flag to be cleared
-  bne 1b
- 
-  ldr r2, =MSC_WRITECTRL
-  movs r3, #0
+  @ Lock Flash after finishing this
+  ldr r2, =FLASH_CR
+  movs r3, #0x80
   str r3, [r2]
 
 2:bx lr
@@ -130,7 +115,7 @@ h_flashkomma:
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "flashpageerase" @ ( Addr -- )
-  @ Löscht einen 4 kb großen Flashblock  Deletes one 4 kb Flash page
+  @ Löscht einen 2kb großen Flashblock  Deletes one 2kb Flash page
 flashpageerase:
 @ -----------------------------------------------------------------------------
   push {r0, r1, r2, r3, lr}
@@ -141,36 +126,43 @@ flashpageerase:
   cmp r0, r3
   blo 2f
 
-  ldr  r2, =MSC_WRITECTRL  @ Enable write access
-  movs r3, #1
+  ldr r2, =FLASH_KEYR
+  ldr r3, =0x45670123
+  str r3, [r2]
+  ldr r3, =0xCDEF89AB
   str r3, [r2]
 
-  ldr r2, =MSC_ADDRB       @ Set address, aligned on 4-even
-  bics r3, r0, #2
+  @ Enable erase
+  ldr r2, =FLASH_CR
+  movs r3, #2 @ Set Erase bit
   str r3, [r2]
 
-  ldr r2, =MSC_WRITECMD    @ Load the just written address into logic
-  movs r3, #1
+  @ Set page to erase
+  ldr r2, =FLASH_AR
+  str r0, [r2]
+
+  @ Start erasing
+  ldr r2, =FLASH_CR
+  movs r3, #0x42 @ Start + Erase
   str r3, [r2]
 
-  ldr r2, =MSC_WRITECMD    @ Erase page command
-  movs r3, #2
-  str r3, [r2]             
+    @ Wait for Flash BUSY Flag to be cleared
+    ldr r2, =FLASH_SR
+1:    ldr r3, [r2]
+      movs r0, #1
+      ands r0, r3
+      bne 1b
 
-  ldr r2, =MSC_STATUS
-1:ldr r3, [r2]
-  ands r3, #1   @ Wait for Flash BUSY Flag to be cleared
-  bne 1b
-
-  ldr  r2, =MSC_WRITECTRL  @ Disable write access
-  movs r3, #0
+  @ Lock Flash after finishing this
+  ldr r2, =FLASH_CR
+  movs r3, #0x80
   str r3, [r2]
 
 2:pop {r0, r1, r2, r3, pc}
 
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "eraseflash" @ ( -- )
-eraseflash: @ Löscht den gesamten Inhalt des Flashdictionaries.
+  @ Löscht den gesamten Inhalt des Flashdictionaries.
 @ -----------------------------------------------------------------------------
         ldr r0, =FlashDictionaryAnfang
 eraseflash_intern:
