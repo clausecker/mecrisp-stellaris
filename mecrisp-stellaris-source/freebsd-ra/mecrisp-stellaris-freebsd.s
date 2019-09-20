@@ -22,12 +22,11 @@
 @ First and foremost, an ELF header
 @ -----------------------------------------------------------------------------
 
-  .include "elfheader.s"
+.include "elfheader.s"
 
 @ -----------------------------------------------------------------------------
-@  Then, Mecrisp as usual
+@ Then, Mecrisp as usual
 @ -----------------------------------------------------------------------------
-
 
 .section mecrisp, "awx" @ Everything is writeable and executable
 
@@ -84,7 +83,7 @@ Reset: @ Einsprung zu Beginn
    ldr r0, [r0]
    cmp r0, #1    @ Skip welcome message if user gives command line arguments
    bne 1f
-     welcome " for Linux by Matthias Koch"
+     welcome " for FreeBSD by Matthias Koch"
 1:
    @ Ready to fly !
    .include "../common/boot.s"

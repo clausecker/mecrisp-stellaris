@@ -15,15 +15,13 @@
 00111 constant S_IXUSR
 decimal
 
-8 base !
-00000 constant O_RDONLY \ open for reading only
-00001 constant O_WRONLY \ open for writing only
-00002 constant O_RDWR   \ open for reading and writing
-02000 constant O_APPEND \ set append mode
-00100 constant O_CREAT  \ create if nonexistent
-01000 constant O_TRUNC  \ truncate to zero length
-00200 constant O_EXCL   \ error if already exists
-decimal
+$0000 constant O_RDONLY \ open for reading only
+$0001 constant O_WRONLY \ open for writing only
+$0002 constant O_RDWR   \ open for reading and writing
+$0008 constant O_APPEND \ set append mode
+$0200 constant O_CREAT  \ create if nonexistent
+$0400 constant O_TRUNC  \ truncate to zero length
+$0800 constant O_EXCL   \ error if already exists
 
 : 0terminate ( addr len -- ) + 0 swap c! ;
 
@@ -89,6 +87,7 @@ decimal
 \ saving the program image back to disk
 \ -----------------------------------------------------------------------------
 
+
 : save ( addr len -- ) \ Save a copy of the whole Forth core with flash dictionary contents
 
   compiletoram? compiletoflash >r
@@ -104,3 +103,4 @@ decimal
 : save" ( -- ) [char] " parse save ;
 
 \ -----------------------------------------------------------------------------
+

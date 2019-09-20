@@ -53,6 +53,24 @@ serial_emit: @ ( c -- ) Emit one character
   pop {pc}
 
 @ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "serial-emit?"
+serial_qemit:  @ ( -- ? ) Ready to send a character ?
+@ -----------------------------------------------------------------------------
+   push {lr}
+   bl pause
+   pushdaconst -1
+   pop {pc}
+   
+@ -----------------------------------------------------------------------------
+  Wortbirne Flag_visible, "serial-key?"
+serial_qkey:  @ ( -- ? ) Is there a key press ?
+@ -----------------------------------------------------------------------------
+   push {lr}
+   bl pause
+   pushdaconst -1
+   pop {pc}
+
+@ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "serial-key"
 serial_key: @ ( -- c ) Receive one character
 @ -----------------------------------------------------------------------------
@@ -83,24 +101,6 @@ serial_key: @ ( -- c ) Receive one character
   pop {pc}
 
 @ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "serial-emit?"
-serial_qemit:  @ ( -- ? ) Ready to send a character ?
-@ -----------------------------------------------------------------------------
-   push {lr}
-   bl pause
-   pushdaconst -1
-   pop {pc}
-   
-@ -----------------------------------------------------------------------------
-  Wortbirne Flag_visible, "serial-key?"
-serial_qkey:  @ ( -- ? ) Is there a key press ?
-@ -----------------------------------------------------------------------------
-   push {lr}
-   bl pause
-   pushdaconst -1
-   pop {pc}
-
-@ -----------------------------------------------------------------------------
  Wortbirne Flag_visible, "syscall" @ ( r0 r1 r2 r3 r4 r5 r6 Syscall# -- r0 )
 @ -----------------------------------------------------------------------------
  push {lr}
@@ -126,6 +126,37 @@ serial_qkey:  @ ( -- ? ) Is there a key press ?
  movs r6, r0 @ Syscall reply into TOS
  
  pop {pc}
+
+@ -----------------------------------------------------------------------------
+ Wortbirne Flag_visible, "syscall?" @ ( r0 r1 r2 r3 r4 r5 r6 Syscall# -- r0 error )
+@ -----------------------------------------------------------------------------
+ push {lr}
+ push {r4, r5, r7} @ Save registers !
+
+ push {r6} @ Syscall number
+
+ ldm psp!, {r6}
+ ldm psp!, {r5}
+ ldm psp!, {r4}
+ ldm psp!, {r3}
+ ldm psp!, {r2}
+ ldm psp!, {r1}
+ ldm psp!, {r0}
+
+ pop {r7} @ into r7
+
+ swi #0
+
+ ite cs
+ movcs r6, #1 @ error = 1 on failure
+ movcc r6, #0 @ error = 0 on success
+
+ pop {r4, r5, r7}
+
+ adds r7, #28 @ Drop 7 elements at once
+ pushda r0    @ push syscall return value
+ 
+ pop {pc}
      
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "cacheflush" @ ( -- )
@@ -136,15 +167,11 @@ cacheflush:
   dmb
   dsb
   isb  
-  
+
   ldr r0, =incipit                @ Start address
-  ldr r1, =explicit               @ End  address
-  movs r2, #0                     @ This zero is important !s
-  movs r3, #0
-  movs r4, #0
-  movs r5, #0
-  movs r6, #0
-  ldr r7, =0x000f0002  @ Syscall __ARM_NR_cacheflush
+  ldr r1, =totalsize              @ Memory length
+  movs r2, #2                     @ MS_INVALIDATE: invalidate all cached data
+  movs r7, #65                    @ syscall 65: msync
   swi #0
 
   pop {r4, r5, r6, r7, pc}
@@ -173,7 +200,6 @@ bye:
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "incipit"
 @ -----------------------------------------------------------------------------
-
   pushdatos
   ldr tos, =incipit
   bx lr
@@ -181,10 +207,11 @@ bye:
 @ -----------------------------------------------------------------------------
   Wortbirne Flag_visible, "explicit"
 @ -----------------------------------------------------------------------------
-
   pushdatos
   ldr tos, =explicit
   bx lr
+
+
 
   .ltorg @ Hier werden viele spezielle Hardwarestellenkonstanten gebraucht, schreibe sie gleich !
          @ Write the many special hardware locations now !
