@@ -17,16 +17,14 @@
 @
 
 .syntax unified
-.cpu cortex-m0
+.cpu cortex-m4
 .thumb
 
 @ -----------------------------------------------------------------------------
 @ Swiches for capabilities of this chip
 @ -----------------------------------------------------------------------------
 
-.equ flash8bytesblockwrite, 1
-.equ m0core, 1
-@ Not available: .equ charkommaavailable, 1
+.equ charkommaavailable, 1
 
 @ -----------------------------------------------------------------------------
 @ Start with some essential macro definitions
@@ -42,13 +40,13 @@
 @ Konstanten für die Größe des Ram-Speichers
 
 .equ RamAnfang, 0x20000000 @ Start of RAM          Porting: Change this !
-.equ RamEnde,   0x20002000 @ End   of RAM.   8 kb. Porting: Change this !
+.equ RamEnde,   0x20010000 @ End   of RAM.  64 kb. Porting: Change this !
 
 @ Konstanten für die Größe und Aufteilung des Flash-Speichers
 
-.equ Kernschutzadresse,     0x00003800 @ Darunter wird niemals etwas geschrieben ! Mecrisp core never writes flash below this address.
-.equ FlashDictionaryAnfang, 0x00003800 @ 14 kb für den Kern reserviert...           14 kb Flash reserved for core.
-.equ FlashDictionaryEnde,   0x00004000 @  2 kb Platz für das Flash-Dictionary        2 kb Flash available. Porting: Change this
+.equ Kernschutzadresse,     0x00004000 @ Darunter wird niemals etwas geschrieben ! Mecrisp core never writes flash below this address.
+.equ FlashDictionaryAnfang, 0x00004000 @ 16 kb für den Kern reserviert...           16 kb Flash reserved for core.
+.equ FlashDictionaryEnde,   0x00040000 @ 496 kb Platz für das Flash-Dictionary     240 kb Flash available. Porting: Change this !
 .equ Backlinkgrenze,        RamAnfang  @ Ab dem Ram-Start.
 
 
@@ -75,7 +73,7 @@ Reset: @ Einsprung zu Beginn
    @ Catch the pointers for Flash dictionary
    .include "../common/catchflashpointers.s"
 
-   welcome " for STM32G031F4"
+   welcome " for STM32F401CC by Matthias Koch"
 
    @ Ready to fly !
    .include "../common/boot.s"
