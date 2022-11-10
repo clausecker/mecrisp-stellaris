@@ -17,7 +17,7 @@
 @
 
 .syntax unified
-.cpu cortex-m0
+.cpu cortex-m4
 .thumb
 
 @ -----------------------------------------------------------------------------
@@ -26,7 +26,6 @@
 
 .equ registerallocator, 1
 .equ flash8bytesblockwrite, 1
-.equ m0core, 1
 @ Not available: .equ charkommaavailable, 1
 
 @ -----------------------------------------------------------------------------
@@ -42,8 +41,9 @@
 
 @ Konstanten für die Größe des Ram-Speichers
 
-.equ RamAnfang, 0x20000000 @ Start of RAM          Porting: Change this !
-.equ RamEnde,   0x20009000 @ End   of RAM.   36 kb. Porting: Change this !
+.equ RamAnfang, 0x20000000 @ Start of RAM    
+.equ RamEnde,   0x20008000 @ End   of RAM.   32 kb on SRAM1,SRAM2,CCMSRAM (continuous)
+@.equ RamEnde,   0x20005800 @ End   of RAM.   22 kb on SRAM1,SRAM2 @ end 10 kb CCMSRAM
 
 @ Konstanten für die Größe und Aufteilung des Flash-Speichers
 
@@ -76,7 +76,7 @@ Reset: @ Einsprung zu Beginn
    @ Catch the pointers for Flash dictionary
    .include "../common/catchflashpointers.s"
 
-   welcome " with M0+ core for STM32G071RB by Matthias Koch"
+   welcome " for STM32G431KB by Matthias Koch"
 
    @ Ready to fly !
    .include "../common/boot.s"
