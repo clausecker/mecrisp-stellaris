@@ -136,10 +136,15 @@ psp .req r7
 .endm
 
 .macro ddup
-  ldr r0, [psp]
-  pushdatos
-  subs psp, #4
+  .ifdef m0core
+  subs psp, #8
+  ldr r0, [psp, #8]
+  str tos, [psp, #4]
   str r0, [psp]
+  .else
+  ldr r0, [psp]
+  stmdb psp!, {r0, tos}
+  .endif
 .endm
 
 .macro ddrop
