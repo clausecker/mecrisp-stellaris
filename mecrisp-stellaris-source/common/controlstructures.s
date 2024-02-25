@@ -40,7 +40,7 @@ cjumpgenerator: @ ( Adresse-der-Opcodelücke Sprungziel Bitmaske -- )
 
    lsls r1, r3, #31  @ Sprung in den ARM-Modus?
    bne jump_too_far
-   asrs r1, r3, #7   @ positives Sprungziel ok?
+   asrs r1, r3, #8   @ positives Sprungziel ok?
    beq 1f
    mvns r1, r1       @ negatives Sprungziel ok?
    beq 1f
