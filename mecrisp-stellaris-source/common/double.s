@@ -52,9 +52,8 @@ dswap:
   Wortbirne Flag_foldable_2|Flag_inline, "2nip" @ ( 4 3 2 1 -- 2 1 )
 dnip:
 @ -----------------------------------------------------------------------------
-  ldm psp!, {r0, r1, r2}
-  subs psp, #4
-  str r0, [psp]
+  ldm psp!, {r0, r1}  @ 4 1
+  str r0, [psp]       @ 2 1
   bx lr
 
 @ -----------------------------------------------------------------------------
@@ -146,19 +145,20 @@ dnip:
   Wortbirne Flag_inline, "2r>" @ Fetches back two elements of returnstack.
                                @ Equal to r> r> swap
 @------------------------------------------------------------------------------
-  pushdatos
+  subs psp, #8
+  str tos, [psp, #4]
   pop {tos}
   pop {r0}
-  subs psp, #4
   str r0, [psp]
   bx lr
 
 @------------------------------------------------------------------------------
   Wortbirne Flag_inline, "2r@" @ Copies the two top elements of returnsteack
 @------------------------------------------------------------------------------
-  pushdatos
+  subs psp, #8
+  str tos, [psp, #4]
   ldr tos, [sp, #4]
-  pushdatos
+  str tos, [psp]
   ldr tos, [sp]
   bx lr
 
@@ -404,34 +404,36 @@ udm_star: @ Unsigned multiply 64*64 = 128
   movs r4, #0 @ For Carry addition
 
   @ ( d c b a )
-  pushdatos
-  ldr tos, [psp, #4]    @ b
-  pushdatos
-  ldr tos, [psp, #12+4] @ d
+  subs psp, #8          @ d c b _ _ a
+  str tos, [psp, #4]    @ d c b a _ a
+  ldr tos, [psp, #8]    @ d c b a _ b
+  str tos, [psp]        @ d c b a b b
+  ldr tos, [psp, #12+4] @ d c b a b d
   bl um_star
   @ ( d c b a  b*d-Low b*d-High )
-  popda r1 @ b*d-High
-  popda r0 @ b*d-Low, finished value
+  movs r1, tos @ b*d-High
+  ldm psp!, {r0, tos} @ b*d-Low, finished value
 
   @ ( d c b a )
 
-  pushdatos
-  ldr tos, [psp, #0]   @ a
-  pushdatos
-  ldr tos, [psp, #8+4] @ c
+  subs psp, #8         @ d c b _ _ a
+  str tos, [psp, #4]   @ d c b a _ a
+  str tos, [psp]       @ d c b a a a
+  ldr tos, [psp, #12]  @ d c b a a c
+
   push {r0, r1}
-    bl um_star
+  bl um_star
   pop {r0, r1}
   @ ( d c b a  a*c-Low a*c-High )
-  popda r3 @ a*c-High
-  popda r2 @ a*c-Low
+  movs r3, tos @ a*c-High
+  ldm psp!, {r2, tos} @ a*c-Low
 
   @ ( d c b a )
 
-  pushdatos
-  ldr tos, [psp, #0]    @ a
-  pushdatos
-  ldr tos, [psp, #12+4] @ d
+  subs psp, #8
+  str tos, [psp, #4]  @ d c b a _ a
+  str tos, [psp, #0]  @ d c b a a a
+  ldr tos, [psp, #16] @ d c b a a d
 
   push {r0, r1, r2, r3}
     bl um_star
@@ -449,13 +451,14 @@ udm_star: @ Unsigned multiply 64*64 = 128
 
   @ ( d c b a )
 
-  pushdatos
-  ldr tos, [psp, #4]    @ b
-  pushdatos
-  ldr tos, [psp, #8+4]  @ c
+  subs psp, #8         @ d c b _ _ a
+  str tos, [psp, #4]   @ d c b a _ a
+  ldr tos, [psp, #8]   @ d c b a _ b
+  str tos, [psp, #0]   @ d c b a b b
+  ldr tos, [psp, #12]  @ d c b a b c
 
   push {r0, r1, r2, r3}
-    bl um_star
+  bl um_star
   pop {r0, r1, r2, r3}
   @ ( d c b a  b*c-Low b*c-High )
 
