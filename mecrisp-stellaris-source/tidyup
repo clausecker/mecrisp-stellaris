@@ -80,6 +80,10 @@ cd microbit-ra
 make clean
 cd ..
 
+cd microbit-v2
+make clean
+cd ..
+
 cd msp432p401r
 make clean
 cd ..

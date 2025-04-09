@@ -82,6 +82,10 @@ cd microbit-ra
 md5sum *.bin
 cd ..
 
+cd microbit-v2
+md5sum *.bin
+cd ..
+
 cd msp432p401r
 md5sum *.bin
 cd ..
