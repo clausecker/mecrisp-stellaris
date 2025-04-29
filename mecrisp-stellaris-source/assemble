@@ -33,6 +33,7 @@ build nrf52832
 build microbit
 build microbit-ra
 build microbit-v2
+build microbit-v2-ra
 build msp432p401r
 build msp432p401r-ra
 build lm3s811-ra
