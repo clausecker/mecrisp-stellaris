@@ -15,4 +15,5 @@ stty sane
 
 echo
 
+mkdir "$(dirname "$4")"
 mv coredump.bin "$4"
