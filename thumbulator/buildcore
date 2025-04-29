@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Usage: buildcore thumbulator mecrisp-stellaris-binary forth-source precompiled-binary
 

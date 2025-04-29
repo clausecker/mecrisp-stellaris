@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 rm -f thumbulator-aducm4050
 rm -f thumbulator-lm4f120-tm4c1294

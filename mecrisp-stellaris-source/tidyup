@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 cd aducm4050-ra
 make clean

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 gcc -o thumbulator-aducm4050        -O2 thumbulator-aducm4050.c
 gcc -o thumbulator-lm4f120-tm4c1294 -O2 thumbulator-lm4f120-tm4c1294.c
