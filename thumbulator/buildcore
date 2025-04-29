@@ -5,14 +5,14 @@
 stty -icanon -echo
 
 {
-   echo -e "compiletoflash\n"
+   echo "compiletoflash"
    cat "$3"
-   echo -e "compiletoflash here hex DABBAD00 !\n"
+   echo 'compiletoflash here hex DABBAD00 !'
    # cat -
 } | "$1" "$2"
 
 stty sane
 
-echo -e ""
+echo
 
 mv coredump.bin "$4"

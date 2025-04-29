@@ -5,7 +5,7 @@
 stty -icanon -echo
 
 {
-   echo -e "' h! hook-hflash! !\n"
+   echo \'' h! hook-hflash! !'
    cat -
 } | "$1" "$2"
 
