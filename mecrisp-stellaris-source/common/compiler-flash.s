@@ -1075,8 +1075,9 @@ dictionarynext: @ Scans dictionary chain and returns true if end is reached.
 @ -----------------------------------------------------------------------------
     @ String überlesen und Pointer gerade machen
     ldrb r1, [tos] @ Länge des Strings holen     Fetch length
-    adds r1, #2    @ Plus 1 Byte für die Länge   One more for length byte
-    movs r2, #1    @ Und großzügig aufrunden     Maybe one more for alignment
+    adds r1, #1+1  @ Plus 1 Byte für die Länge   One more for length byte
+                   @ und 1 Byte zum aufrunden    and one byte for rounding up
+    movs r2, #1    @ Und großzügig aufrunden     round up to even address
     bics r1, r2
     adds tos, r1
     bx lr
@@ -1086,9 +1087,10 @@ skipstring: @ Überspringt einen String, dessen Adresse in r0 liegt.  Skip strin
 @ -----------------------------------------------------------------------------
   push {r1, r2}
     @ String überlesen und Pointer gerade machen
-    ldrb r1, [r0] @ Länge des Strings holen     Fetch length
-    adds r1, #2   @ Plus 1 Byte für die Länge   One more for length byte
-    movs r2, #1   @ Und großzügig aufrunden     Maybe one more for aligning.
+    ldrb r1, [r0] @ Länge des Strings holen     fetch length
+    adds r1, #1+1 @ plus 1 Byte für die Länge   one more for length byte
+                  @ und 1 Byte zum aufrunden    and one byte for rounding up
+    movs r2, #1   @ und großzügig aufrunden     round up to even address
     bics r1, r2
     adds r0, r1
   pop {r1, r2}
