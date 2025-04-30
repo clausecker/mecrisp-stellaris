@@ -60,9 +60,13 @@ dnip:
   Wortbirne Flag_foldable_4, "2over" @ ( 4 3 2 1 -- 4 3 2 1 4 3 )
 @ -----------------------------------------------------------------------------
   ldr r0, [psp, #8]    @ 4 3 2 1
+.ifdef m0core
   subs psp, #8         @ 4 3 2 _ _ 1
   str r0, [psp]        @ 4 3 2 _ 4 1
   str tos, [psp, #4]   @ 4 3 2 1 4 1
+.else
+  strd r0, tos, [psp, #-8]!  @ 4 3 2 1 4 1
+.endif
   ldr tos, [psp, #12]  @ 4 3 2 1 4 3
   bx lr
 
