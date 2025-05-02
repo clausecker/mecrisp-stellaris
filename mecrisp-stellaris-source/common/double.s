@@ -65,7 +65,7 @@ dnip:
   str r0, [psp]        @ 4 3 2 _ 4 1
   str tos, [psp, #4]   @ 4 3 2 1 4 1
 .else
-  strd r0, tos, [psp, #-8]!  @ 4 3 2 1 4 1
+  stmdb psp!, {r0, tos} @ 4 3 2 1 4 1
 .endif
   ldr tos, [psp, #12]  @ 4 3 2 1 4 3
   bx lr
@@ -83,8 +83,8 @@ dnip:
   str r0, [psp, #16]        @ 2 1 4 3 2 1
 .else
   ldm psp!, {r0, r1, r2}    @ 1
-  strd tos, r0, [psp, #-8]! @ 2 1 1
-  stmdb psp!, {r0, r1, r2}  @ 2 1 4 3 2 1
+  str r0, [psp, #-4]!       @ 2 1
+  stmdb psp!, {r0, r1, r2, tos}  @ 2 1 4 3 2 1
 .endif
   bx lr
 
