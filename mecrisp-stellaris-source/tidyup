@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 
 cd aducm4050-ra
 make clean

@@ -1,14 +1,31 @@
 #!/bin/sh
+set -eu
 
 build() {
-	mkdir -p ../"$1"
-	( cd "$1" || return
-	make clean all
-	ls -l *.bin
-	md5sum *.bin
-	[ -f *.bin ] && cp *.bin ../../"$1"/
-	[ -f *.hex ] && cp *.hex ../../"$1"/
-	[ -f *.srec ] && cp *.srec ../../"$1"/
+	(
+		port="${1:?}"
+		cd "${port:?}"
+
+		mkdir -p "../../${port:?}"
+		make clean all
+
+		set -- *.bin
+		if [ -f "$1" ]; then
+			ls -l -- "$@"
+			md5sum -- "$@"
+			cp -- "$@" "../../${port:?}/"
+		fi
+
+		set -- *.hex
+		if [ -f "$1" ]; then
+			cp -- "$@" "../../${port:?}/"
+		fi
+
+		set -- *.srec
+		if [ -f "$1" ]; then
+			cp -- "$@" "../../${port:?}/"
+		fi
+
 	)
 }
 
@@ -327,15 +344,19 @@ cd ..
 
 cd mecrisp-stellaris-source
 
-cd linux
-./assemble
-cp mecrisp-stellaris-linux ../../linux
-cd ..
+if ! which arm-linux-gnueabi-as; then
+	echo 'Install missing arm-linux-gnueabi-as command to build the Linux port.' >&2
+else
+	cd linux
+	./assemble
+	cp mecrisp-stellaris-linux ../../linux
+	cd ..
 
-cd linux-ra
-./assemble
-cp mecrisp-stellaris-linux ../../linux-ra
-cd ..
+	cd linux-ra
+	./assemble
+	cp mecrisp-stellaris-linux ../../linux-ra
+	cd ..
+fi
 
 cd freebsd-ra
 ./assemble

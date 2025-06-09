@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 
 cd mecrisp-stellaris-source
 ./assemble
@@ -46,9 +47,11 @@ cd ..
 
 # Linux core(s)
 
-cd linux-ra
-./buildcore-linux
-cd ..
+if [ -f linux-ra/mecrisp-stellaris-linux ]; then
+	cd linux-ra
+	./buildcore-linux
+	cd ..
+fi
 
 # Experimental LPC845 precompilation
 

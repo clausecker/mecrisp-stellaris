@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 
 # With disassembler and math
 
