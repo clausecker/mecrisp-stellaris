@@ -12,7 +12,7 @@ stty -icanon -echo
    cat save.txt
    echo 'save" mecrisp-stellaris-linux-with-disassembler-and-math'
    # cat -
-} | ./mecrisp-stellaris-linux
+} | qemu-arm-static mecrisp-stellaris-linux
 
 stty sane
 

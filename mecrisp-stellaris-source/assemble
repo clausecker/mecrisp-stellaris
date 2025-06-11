@@ -344,19 +344,15 @@ cd ..
 
 cd mecrisp-stellaris-source
 
-if ! which arm-linux-gnueabi-as; then
-	echo 'Install missing arm-linux-gnueabi-as command to build the Linux port.' >&2
-else
-	cd linux
-	./assemble
-	cp mecrisp-stellaris-linux ../../linux
-	cd ..
+cd linux
+./assemble
+cp mecrisp-stellaris-linux ../../linux
+cd ..
 
-	cd linux-ra
-	./assemble
-	cp mecrisp-stellaris-linux ../../linux-ra
-	cd ..
-fi
+cd linux-ra
+./assemble
+cp mecrisp-stellaris-linux ../../linux-ra
+cd ..
 
 cd freebsd-ra
 ./assemble
