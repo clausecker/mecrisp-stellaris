@@ -1,0 +1,14 @@
+Port for GD32E230 by Peter Schildmann
+
+LCSC GD32E230 Dev Board (https://oshwlab.com/lckfb-team/lcsc-gd32e230-dev-board)
+
+   - Equipped with a GD32E230C8T6 MCU
+   - Uses the same pinout as the well-known Blue Pill board
+   - Includes a CH340N USB-to-serial converter connected to MCU pins PA9 (TX) and PA10 (RX)
+   - Features an ARM Cortex-M23 core, 8 KB RAM, and 64 KB Flash memory
+   - Peripherals are very similar to those of the STM32F030, with some enhancements
+
+The UART is configured for 8 data bits, no parity, and two stop bits, with a baud rate of 115200.
+
+(The STM32F030 port was used as a starting point because it runs on the GD32E230,
+with the exception of Flash programming.)
