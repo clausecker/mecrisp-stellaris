@@ -937,3 +937,12 @@
   - improve various stack juggler and kernel code sequences
   - Contribution by Paul Jewell:
       New target: microbit-v2 (nRF52833)
+
+26.12.2025, Robert Clausecker, Mecrisp-Stellaris 3.0.1
+
+  - .gitignore has been improved to cover all build artefacts
+  - UNIX line endings are now consistently used
+  - Contribution by Jim Morris:
+      additional drivers in rp2040-ra/contrib
+  - Contribution by Peter Schildmann:
+      New target: GigaDevice GD32E230
