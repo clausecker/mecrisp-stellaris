@@ -9,6 +9,10 @@ cd atsame70-ra
 make clean
 cd ..
 
+cd gd32e230x8-ra
+make clean
+cd ..
+
 cd lpc1114fn28
 make clean
 cd ..

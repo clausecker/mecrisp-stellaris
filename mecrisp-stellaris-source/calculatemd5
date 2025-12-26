@@ -11,6 +11,10 @@ cd atsame70-ra
 md5sum *.bin
 cd ..
 
+cd gd32e230x8-ra
+md5sum *.bin
+cd ..
+
 cd lpc1114fn28
 md5sum *.bin
 cd ..

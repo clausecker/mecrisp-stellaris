@@ -31,6 +31,7 @@ build() {
 
 build aducm4050-ra
 build atsame70-ra
+build gd32e230x8-ra
 build lpc1114fn28
 build lpc1114fn28-ra
 build lpc1114fbd48
