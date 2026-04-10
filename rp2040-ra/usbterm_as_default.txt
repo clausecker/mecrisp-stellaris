@@ -1,0 +1,3 @@
+\ include after usb-rp2040.txt
+
+: init ( -- ) usb-terminal ;

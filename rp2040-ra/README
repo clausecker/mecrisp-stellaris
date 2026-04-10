@@ -18,6 +18,10 @@ GP1 (UART TX)   --> RXD
 
 Communication is done with 115200 baud 8N1.
 
+Alternatively, copy mecrisp-stellaris-pico-with-tools-usb.uf2 into the mass
+storage device.  This variant starts the USB console by default, which should
+appear as a USB modem device when plugged into a computer.
+
 -------------------------------------------------------------------------------
   Special features and dictionary handling:
 -------------------------------------------------------------------------------
