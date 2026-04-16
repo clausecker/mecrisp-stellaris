@@ -1,6 +1,4 @@
 #!/bin/sh
 set -eu
 
-rm -f *.elf
-rm -f *.o
-rm -f *.list
+rm -f mecrisp-stellaris-pico-core.bin mecrisp-stellaris-pico-core.list mecrisp-stellaris-pico-core.elf mecrisp-stellaris-pico-core.o

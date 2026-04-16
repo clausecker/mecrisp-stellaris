@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+
+rm -f blinky_boot_crc.bin blinky_boot.bin blinky_boot.list blinky_boot.elf blinky_boot.o
