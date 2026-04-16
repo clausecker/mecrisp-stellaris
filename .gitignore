@@ -9,3 +9,5 @@
 *.map
 included.fs
 included-*.fs
+.*.swp
+.DS_Store
