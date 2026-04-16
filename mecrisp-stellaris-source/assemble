@@ -133,8 +133,6 @@ build nuc123-ra
 cd rp2040-ra
 ./assemble
 cp *.bin ../../rp2040-ra
-cp    blinky-boot/*crc.bin ../../rp2040-ra/tools
-cp launchpad-boot/*crc.bin ../../rp2040-ra/tools
 cd ..
 
 # Intel Hex images for STM targets:
