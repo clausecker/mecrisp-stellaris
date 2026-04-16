@@ -9,11 +9,11 @@ cat ../common/fixpt-math-lib.fs \
     ../common/multitask.txt \
     cycles.txt \
     ../common/dump.txt \
-    usb-rp2040.txt >included.txt
-cat included.txt usbterm_as_default.txt > included-usb.txt
+    usb-rp2040.txt >included.fs
+cat included.fs usbterm_as_default.txt > included-usb.fs
 
-./buildcore-pico ../thumbulator/thumbulator-rp2040 mecrisp-stellaris-pico-core.bin included.txt mecrisp-stellaris-pico-core-with-tools.bin
-./buildcore-pico ../thumbulator/thumbulator-rp2040 mecrisp-stellaris-pico-core.bin included-usb.txt mecrisp-stellaris-pico-core-with-tools-usb.bin
+./buildcore-pico ../thumbulator/thumbulator-rp2040 mecrisp-stellaris-pico-core.bin included.fs mecrisp-stellaris-pico-core-with-tools.bin
+./buildcore-pico ../thumbulator/thumbulator-rp2040 mecrisp-stellaris-pico-core.bin included-usb.fs mecrisp-stellaris-pico-core-with-tools-usb.bin
 
 # Generate files for flash programming
 

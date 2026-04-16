@@ -7,3 +7,5 @@
 *.elf
 *.srec
 *.map
+included.fs
+included-*.fs

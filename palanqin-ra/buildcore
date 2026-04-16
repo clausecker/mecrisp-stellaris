@@ -11,6 +11,6 @@ mkdir -p precompiled
    cat ../common/assembler-m0.txt
    cat basisdefinitions.txt
 
-} > precompiled/included.txt
+} > included.fs
 
-../thumbulator/buildcore ../thumbulator/thumbulator-palanqin mecrisp-stellaris-palanqin.bin precompiled/included.txt precompiled/stelaqin.bin
+../thumbulator/buildcore ../thumbulator/thumbulator-palanqin mecrisp-stellaris-palanqin.bin included.fs stelaqin.bin

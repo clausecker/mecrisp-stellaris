@@ -41,7 +41,7 @@ cd thumbulator
   ./release
   cd ../thumbulator
 
-./buildcore-stm  ./thumbulator-numworks           ../numworks-ra/mecrisp-stellaris-numworks.bin      ../numworks-ra/completesources.txt   ../numworks-ra/mecrisp-stellaris-numworks-with-sources.bin
+./buildcore-stm  ./thumbulator-numworks           ../numworks-ra/mecrisp-stellaris-numworks.bin      ../numworks-ra/included.fs   ../numworks-ra/mecrisp-stellaris-numworks-with-sources.bin
 
 cd ..
 
