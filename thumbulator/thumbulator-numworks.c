@@ -268,7 +268,17 @@ int main ( int argc, char *argv[] )
 
    unsigned int ra;
 
+   if (argc != 2) {
+     fprintf(stderr, "usage: %s image.bin\n", argv[0]);
+     return(1);
+   }
+
    fp=fopen(argv[1],"rb");
+   if (fp == NULL) {
+     perror(argv[1]);
+     return(1);
+   }
+
    ra=fread(rom,1,sizeof(rom),fp);
    fclose(fp);
 
