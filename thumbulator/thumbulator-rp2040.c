@@ -159,7 +159,7 @@ unsigned int read32 ( unsigned int addr )
 
      case 0x40008030: return(2); // CLK_REF_CTRL
      case 0x40008038: if (clk_sys_selected == 1) { clk_sys_selected = 4; return(1); } else { return(clk_sys_selected); } // CLK_REF_SELECTED
-     case 0x40008044: return(1); // CLK_SYS_SELECTED
+     case 0x40008044: return(~0); // CLK_SYS_SELECTED
 
      case 0x40034018: return(0); // UART0_FR, never busy, always characters available
 
