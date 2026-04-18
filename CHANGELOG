@@ -946,3 +946,16 @@
       additional drivers in rp2040-ra/contrib
   - Contribution by Peter Schildmann:
       New target: GigaDevice GD32E230
+
+18.04.2026, Robert Clausecker, Mecrisp-Stellaris 3.0.2
+
+ - USB terminal support for RP2040 (Matthias Koch)
+   - a new image that defaults to the USB terminal is provided
+   - on the serial terminal image, the USB terminal code is pre-loaded
+     and can be activated if desired
+ - fix terminal scripts following introduction of set -u
+ - experimental WS2812 driver for RP2040 (Jan Bramkamp)
+ - thumbulator now fails gracefully if no image file is supplied
+ - remove some redundant and generated files from the repository
+ - misc. housekeeping work (Jan Bramkamp, Robert Clausecker)
+ - make rp2040-ry/uf2conv.py compatible with Python 3.14 (Jan Bramkamp)

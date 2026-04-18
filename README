@@ -73,6 +73,7 @@ Contributions:
   - Nutiny-SDK-NUC123            with NUC123
   - RF-BM-ND0x                   with nRF52832
   - e73-2G4M04S                  with nRF52832
+  - LCSC GD32E230 Dev Board      with GD32E230C8T6
 
 https://codeberg.org/clausecker/mecrisp-stellaris
 ;------------------------------------------------------------------------------
